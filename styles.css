@@ -41,7 +41,7 @@ canvas{
 }
 
 .container {
-  max-width: 700px;
+  max-width: 900px;
   width: 100%;
   padding: 32px;
   position: relative;
@@ -53,7 +53,30 @@ canvas{
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 32px;
+}
+
+.content-wrapper {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.profile-image {
+  flex-shrink: 0;
+  width: 200px;
+}
+
+.profile-image img {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.text-content {
+  flex: 1;
+  min-width: 0;
 }
 
 h1 {
@@ -68,7 +91,7 @@ p {
   line-height: 1.8;
   color: #bbbbbb;
   margin-bottom: 20px;
-  text-align: justify;
+  text-align: left;
   font-size: 18px;
 }
 
@@ -92,7 +115,6 @@ p {
 }
 
 .social-icons a:hover {
-    /* background: #764ba2; */
     transform: scale(1.25);
 }
 
@@ -157,4 +179,35 @@ canvas{
   background-repeat: no-repeat;
   z-index: 0;
   pointer-events: none;
+}
+
+.magic-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  text-decoration: none;
+  color: inherit;
+  padding: 0.1em 0.4em;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  transition: background 0.2s, border-color 0.2s;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.magic-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: scale(1.025);
+}
+
+.magic-link-icon {
+  width: 1em;
+  height: 1em;
+  border-radius: 2px;
+  background-size: cover;
+  background-position: center;
+  display: inline-block;
+  flex-shrink: 0;
 }
