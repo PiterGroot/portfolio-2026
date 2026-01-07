@@ -56,12 +56,72 @@
      margin: 24px 0 12px 0;
  }
 
+ .blog-post-content ul {
+     list-style: disc;
+     margin-left: 24px;
+     margin-bottom: 20px;
+ }
+
  .blog-post-content code {
-     background: rgba(255, 255, 255, 0.08);
+     background: #2d2d2d;
      padding: 2px 6px;
      border-radius: 3px;
      font-family: 'Courier New', monospace;
      font-size: 16px;
+     color: #a8d08d;
+ }
+
+ .blog-post-content pre {
+     background: #1e1e1e;
+     padding: 16px;
+     border-radius: 6px;
+     overflow-x: auto;
+     margin: 20px 0;
+     border: 1px solid #3d3d3d;
+ }
+
+ .blog-post-content pre code {
+     background: none;
+     padding: 0;
+     color: #d4d4d4;
+ }
+
+ /* Syntax Highlighting - VS Code Dark+ Theme */
+ .blog-post-content code .keyword {
+     color: #c586c0;
+ }
+
+ .blog-post-content code .string {
+     color: #ce9178;
+ }
+
+ .blog-post-content code .comment {
+     color: #6a9955;
+     font-style: italic;
+ }
+
+ .blog-post-content code .function {
+     color: #dcdcaa;
+ }
+
+ .blog-post-content code .number {
+     color: #b5cea8;
+ }
+
+ .blog-post-content code .type {
+     color: #4ec9b0;
+ }
+
+ .blog-post-content code .variable {
+     color: #9cdcfe;
+ }
+
+ .blog-post-content code .operator {
+     color: #d4d4d4;
+ }
+
+ .blog-post-content code .property {
+     color: #9cdcfe;
  }
 
  .blog-post-content ul {
@@ -71,6 +131,15 @@
  }
 
  .blog-post-content li {
-     list-style: disc;
      margin-bottom: 8px;
+ }
+
+ .blog-post-content a {
+     color: #6b9bd1;
+     text-decoration: none;
+     transition: color 0.3s ease;
+ }
+
+ .blog-post-content a:hover {
+     color: #8ab4e0;
  }

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tab title</title>
+    <link rel="stylesheet" href="../style/styles.css">
+    <link rel="stylesheet" href="../style/blog-style.css">
+</head>
+
+<body>
+    <div id="particles-js"></div>
+    <script src="../js/particles.js"></script>
+    <script src="../js/app.js"></script>
+
+    <div class="blog-post-container">
+        <a href="../index.html" class="back-link">← Back</a>
+
+        <article>
+            <header class="blog-post-header">
+                <h1 class="blog-post-title">Building Avalanche: A Falling Sand Simulation Library</h1>
+                <p class="blog-post-meta">January 7, 2026</p>
+            </header>
+
+            <div class="blog-post-content">
+                <p>
+                    Over the past few months, I've been working on Avalanche, a header-only C++ library for creating
+                    falling sand simulations. The goal was simple: build a fast, flexible system for simulating millions
+                    of particles on the CPU without compromising on performance or ease of use.
+                </p>
+
+                <h2>The Challenge</h2>
+                <p>
+                    Falling sand simulations are deceptively complex. You need to update potentially millions of cells
+                    every frame, handle spatial queries efficiently, and provide a clean API that doesn't get in the
+                    way. The naive approach of updating every cell sequentially creates performance bottlenecks and
+                    limits scalability.
+                </p>
+
+                <h2>Spatial Partitioning</h2>
+                <p>
+                    The core of Avalanche's performance comes from its spatial partitioning system. The world is divided
+                    into sectors, and each sector is further subdivided into chunks. Only active chunks that contain
+                    moving particles are updated each frame, allowing the simulation to scale to massive worlds without
+                    wasting cycles on empty space.
+                </p>
+
+                <pre><code><span class="comment">// Sectors contain the simulation grid</span>
+<span class="comment">// Chunks track which regions need updates</span>
+<span class="comment">// Only active chunks are processed</span></code></pre>
+
+                <p>
+                    This sleeping/waking system means that static piles of sand don't consume any processing time, while
+                    dynamic regions get full attention.
+                </p>
+
+                <h2>API Design Philosophy</h2>
+                <p>
+                    I wanted Avalanche to feel natural for game developers. The API centers around callback functions
+                    that define cell behavior:
+                </p>
+
+                <pre><code><span class="keyword">bool</span> <span class="function">sand_update</span>(<span class="type">CellUpdateContext</span>& <span class="variable">ctx</span>) {
+    <span class="comment">// Check if cell can move down</span>
+    <span class="keyword">if</span> (<span class="variable">ctx</span>.<span class="function">is_empty</span>(<span class="variable">ctx</span>.<span class="property">x</span>, <span class="variable">ctx</span>.<span class="property">y</span> <span class="operator">+</span> <span class="number">1</span>)) {
+        <span class="variable">ctx</span>.<span class="function">move_cell</span>(<span class="variable">ctx</span>.<span class="property">x</span>, <span class="variable">ctx</span>.<span class="property">y</span> <span class="operator">+</span> <span class="number">1</span>);
+        <span class="keyword">return</span> <span class="keyword">true</span>;
+    }
+    <span class="keyword">return</span> <span class="keyword">false</span>;
+}</code></pre>
+
+                <p>
+                    The <code><span class="type">CellUpdateContext</span></code> provides everything you need: position,
+                    cell properties, spatial
+                    queries, and movement commands. No wrestling with indices or coordinate systems.
+                </p>
+
+                <h3>User Data System</h3>
+                <p>
+                    Each cell carries 32 bits of custom data, split into flags and values. This allows you to implement
+                    properties like temperature, lifetime, or state machines without modifying the core library:
+                </p>
+
+                <pre><code><span class="comment">// Pack custom data into cells</span>
+<span class="type">uint32_t</span> <span class="variable">userData</span> <span class="operator">=</span> <span class="variable">utils</span>::<span class="function">pack_user_data</span>(
+    <span class="variable">BURNING_FLAG</span> <span class="operator">|</span> <span class="variable">WET_FLAG</span>,  <span class="comment">// 16 bits of flags</span>
+    <span class="variable">temperature</span>               <span class="comment">// 16 bits of data</span>
+);</code></pre>
+
+                <h2>Performance Considerations</h2>
+                <p>
+                    Several design decisions were made specifically for cache efficiency and CPU performance:
+                </p>
+
+                <ul>
+                    <li>Cell data is stored in separate arrays (IDs, colors, user data) for better memory access
+                        patterns</li>
+                    <li>Cell movements are batched and committed after updates to avoid data races</li>
+                    <li>Chunk boundaries trigger neighboring chunk updates only when necessary</li>
+                    <li>Random selection from pending moves prevents directional bias without sorting overhead</li>
+                </ul>
+
+                <h2>Header-Only Design</h2>
+                <p>
+                    Avalanche is distributed as a single header file. Just include it, define
+                    <code><span class="variable">AVALANCHE_IMPLEMENTATION</span></code> in one translation unit, and
+                    you're ready to go. No build
+                    system integration, no linking headaches.
+                </p>
+
+                <h2>What's Next</h2>
+                <p>
+                    The library is currently in active development for my Steam game Phyxel. Future improvements include
+                    SIMD optimization for bulk operations, better multithreading support, and additional debugging
+                    tools.
+                </p>
+
+                <p>
+                    If you're working on a falling sand game or physics simulation, Avalanche provides a solid
+                    foundation without forcing architectural decisions on your project. The code is designed to be
+                    readable, modifiable, and performance-conscious.
+                </p>
+            </div>
+        </article>
+    </div>
+</body>
+
+</html>
