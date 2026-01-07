@@ -168,17 +168,37 @@ body {
 
 html {
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  scroll-behavior: smooth;
 }
 
 body {
   font: normal 85% Arial, Helvetica, sans-serif;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   min-height: 100vh;
-  padding: 20px;
+  padding: 135px 20px 20px;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body::-webkit-scrollbar {
+  width: 8px;
+}
+
+body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+body::-webkit-scrollbar-thumb {
+  background: rgba(200, 200, 200, 0.3);
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+}
+
+body::-webkit-scrollbar-thumb:hover {
+  background: rgba(200, 200, 200, 0.5);
 }
 
 canvas {
@@ -200,6 +220,25 @@ canvas {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 32px;
+}
+
+.name-section {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.blog-link {
+  font-style: italic;
+  font-size: 18px;
+  color: #888;
+  text-decoration: none;
+  transition: color 0.3s ease;
+  cursor: pointer;
+}
+
+.blog-link:hover {
+  color: #bbbbbb;
 }
 
 .content-wrapper {
@@ -403,4 +442,67 @@ canvas {
   background-position: center;
   display: inline-block;
   flex-shrink: 0;
+}
+
+/* Blog Section */
+.blog-section {
+  margin-top: 80px;
+  padding-top: 40px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.blog-title {
+  font-size: 28px;
+  color: #bbbbbb;
+  margin-bottom: 32px;
+  font-weight: 600;
+}
+
+.blog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.blog-entry {
+  padding: 20px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+}
+
+.blog-entry:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.blog-date {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 8px;
+  font-style: italic;
+}
+
+.blog-entry-title {
+  font-size: 22px;
+  margin-bottom: 12px;
+}
+
+.blog-entry-title a {
+  color: #bbbbbb;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.blog-entry-title a:hover {
+  color: #ffffff;
+}
+
+.blog-excerpt {
+  font-size: 16px;
+  color: #999;
+  line-height: 1.6;
+  margin: 0;
 }
