@@ -25,20 +25,25 @@
             </header>
 
             <div class="blog-post-content">
+                
+                <h2>Introduction</h2>
                 <p>
-                    Over the past few months, I've been working on Avalanche, a production-ready falling sand physics engine designed as a single-header C++ library. The goal was to create a fast, flexible system for simulating millions of particles on the CPU that developers could integrate into their projects with minimal friction.
+                    Ever played the game <a href="https://noitagame.com/">Noita</a>? Well I have, and I loved it. In Noita, every pixel on the screen is simulated in the physics engine called the <a href="https://nollagames.com/fallingeverything/">falling everything engine</a>.
+                    Emergent behavior is one of the main selling point of this game. These are events that may happen, which the programmer didn't explicitly code. It just emerges out of the different rules and the conditions that the developers have made. For example, lava burns wood, which eventually falls onto a water pool and creates hard rock.
+                    <br> <br>I loved it so much that I decided to build my own falling sand simulation library from scratch and try to push the engine as much as I could. 
+                    That's why I started working on Avalanche, a production-ready falling sand physics engine designed as a single-header C++ library. The goal was to create a fast, flexible system to simulate thousands of particles on the CPU that developers could integrate into their projects with minimal friction.
                 </p>
 
                 <video src="../media/avalanche.mp4" controls autoplay loop muted style="max-width: 100%; height: auto;"></video>
 
                 <h2>The Challenge</h2>
                 <p>
-                    Falling sand simulations are deceptively complex. You need to update potentially millions of cells every frame, handle spatial queries efficiently, and provide a clean API that doesn't get in the way. The naive approach of updating every cell sequentially creates performance bottlenecks, directional biases, and non-deterministic behavior that breaks the simulation.
+                    Falling sand simulations are deceptively complex. You need to update potentially thousands of cells every frame, handle spatial queries efficiently, and provide a clean API that doesn't get in the way. The naive approach of updating every cell sequentially creates performance bottlenecks, directional biases, and non-deterministic behavior that breaks the simulation.
                 </p>
 
-                <h2>Architecture Overview</h2>
+                <h2>Architecture Overview and API Design Philosophy</h2>
                 <p>
-                    I chose the single-header format as both a technical challenge and a practical solution for ease of integration. Drawing inspiration from Jacco Bikker's tinybvh project, I structured Avalanche to maintain clean separation between public API and implementation while keeping everything in one file:
+                    I chose the single-header format as both a technical challenge and a practical solution for ease of integration. Among other great c++ single-header libraries, drawing inspiration from Jacco Bikker's <a href="https://github.com/jbikker/tinybvh">tinybvh</a> project, I structured Avalanche to maintain clean separation between public API and implementation while keeping everything in one file:
                 </p>
 
                 <pre><code><span class="comment">┌─────────────────────────────────────────────┐</span>
@@ -78,25 +83,8 @@
     <span class="variable">world</span>.<span class="function">step_world</span>(<span class="variable">deltaTime</span>, <span class="variable">fixedTimeStep</span>);
 }</code></pre>
 
-                <h2>Spatial Partitioning with Sleep System</h2>
                 <p>
-                    The core of Avalanche's performance comes from its hierarchical spatial partitioning system. The world is divided into sectors, and each sector is further subdivided into 50×50 pixel chunks that can enter sleep states when inactive:
-                </p>
-
-                <pre><code><span class="keyword">struct</span> <span class="type">SectorSimulationChunk</span> 
-{
-    <span class="type">int</span> <span class="variable">chunkX</span>, <span class="variable">chunkY</span>;
-    <span class="type">bool</span> <span class="variable">isSleeping</span> <span class="operator">=</span> <span class="keyword">true</span>;
-    <span class="type">bool</span> <span class="variable">hasBeenUpdatedThisFrame</span> <span class="operator">=</span> <span class="keyword">false</span>;
-};</code></pre>
-
-                <p>
-                    Only active chunks that contain moving particles are updated each frame. This means that static piles of sand consume zero CPU time, while dynamic regions get full attention. A 500×500 sector with 90% sleeping chunks achieves major performance improvements by avoiding unnecessary iteration.
-                </p>
-
-                <h2>API Design Philosophy</h2>
-                <p>
-                    I wanted Avalanche to feel natural for game developers. The API centers around callback functions that define cell behavior:
+                    I wanted Avalanche to feel natural for game devs. The API centers around callback functions that define cell behavior:
                 </p>
 
                 <pre><code><span class="keyword">bool</span> <span class="function">sand_update</span>(<span class="type">CellUpdateContext</span>& <span class="variable">ctx</span>) {
@@ -109,18 +97,56 @@
 }</code></pre>
 
                 <p>
-                    The <code><span class="type">CellUpdateContext</span></code> provides everything you need: position, cell properties, spatial queries, and movement commands. No wrestling with indices or coordinate systems.
+                    The <code><span class="type">CellUpdateContext</span></code> provides everything you need: position, cell properties, spatial queries, and movement commands. No wrestling with indices or coordinate systems. All cell behavior is defined through these callbacks, making it easy to create new materials and interactions. The core engine doesn't make any assumptions about cell types or behaviors, it just provides the framework and handles the heavy lifting. Here is for example a potential implementation for 
                 </p>
+
+                <pre><code><span class="keyword">inline</span> <span class="keyword">bool</span> <span class="function">OnUpdateSand</span>(<span class="type">avl::CellUpdateContext</span>& <span class="variable">ctx</span>)
+{
+    <span class="keyword">const</span> <span class="type">int</span> <span class="variable">targetY</span> <span class="operator">=</span> <span class="variable">ctx</span>.<span class="property">y</span> <span class="operator">+</span> <span class="number">1</span>;
+
+    <span class="keyword">if</span> (<span class="operator">!</span><span class="variable">ctx</span>.<span class="function">is_out_of_bounds</span>(<span class="variable">ctx</span>.<span class="property">x</span>, <span class="variable">targetY</span>))
+    {
+        <span class="type">uint8_t</span> <span class="variable">downCellID</span> <span class="operator">=</span> <span class="number">0</span>;
+
+        <span class="keyword">if</span> (<span class="variable">ctx</span>.<span class="function">is_empty</span>(<span class="variable">ctx</span>.<span class="property">x</span>, <span class="variable">targetY</span>, <span class="variable">downCellID</span>))
+        {
+            <span class="variable">ctx</span>.<span class="function">move_cell</span>(<span class="variable">ctx</span>.<span class="property">x</span>, <span class="variable">targetY</span>);
+            <span class="keyword">return</span> <span class="keyword">true</span>;
+        }
+        <span class="keyword">else</span> <span class="keyword">if</span> (<span class="variable">ctx</span>.<span class="property">cellID</span> <span class="operator">!=</span> <span class="number">3</span> <span class="operator">&amp;&amp;</span> <span class="variable">downCellID</span> <span class="operator">==</span> <span class="number">3</span>)
+        {
+            <span class="keyword">if</span> (<span class="variable">avl</span>::<span class="variable">utils</span>::<span class="function">get_chance</span>(<span class="number">.5f</span>))
+                <span class="variable">ctx</span>.<span class="function">swap_cell</span>(<span class="variable">ctx</span>.<span class="property">x</span>, <span class="variable">targetY</span>);
+            <span class="keyword">else</span> {
+                <span class="variable">ctx</span>.<span class="function">notify_chunk</span>();
+            }
+            <span class="keyword">return</span> <span class="keyword">true</span>;
+        }
+    }
+
+    <span class="keyword">return</span> <span class="keyword">false</span>;
+}</code></pre>
+                <p>
+                    These update functions are registered with the library during cell type registration:
+                </p>
+
+                <code><pre><code><span class="variable">avl</span>::<span class="variable">utils</span>::<span class="function">register_cell</span>(
+        <span class="number">1</span>, <span class="comment">// Cell ID</span>
+        <span class="variable">packedColor</span>, <span class="comment">// Packed RGBA color</span>
+        <span class="variable">world</span>, <span class="comment">// Reference to the world</span>
+        &amp;<span class="variable">OnUpdateSand</span>, <span class="comment">// Update callback function</span>
+    <span class="number">0</span> <span class="comment">// Default user data</span>
+);</code></pre></code>
 
                 <p>
                     The library also provides convenient plotting functions for common shapes:
                 </p>
 
                 <pre><code><span class="variable">world</span>.<span class="function">plot_circle</span>(<span class="variable">mouseX</span>, <span class="variable">mouseY</span>, <span class="number">20</span>, <span class="variable">sandCellID</span>);
+<span class="variable">world</span>.<span class="function">plot_cell</span>(<span class="variable">x</span>, <span class="variable">y</span>, <span class="variable">wallCellID</span>);
 <span class="variable">world</span>.<span class="function">plot_rectangle</span>(<span class="variable">x0</span>, <span class="variable">y0</span>, <span class="variable">x1</span>, <span class="variable">y1</span>, <span class="variable">wallCellID</span>);
 <span class="variable">world</span>.<span class="function">plot_line</span>(<span class="variable">startX</span>, <span class="variable">startY</span>, <span class="variable">endX</span>, <span class="variable">endY</span>, <span class="variable">waterCellID</span>);</code></pre>
 
-                <h3>Expanded API design motivation</h3>
                 <p>
                     My API choices make the library easy to embed because:
                 </p>
