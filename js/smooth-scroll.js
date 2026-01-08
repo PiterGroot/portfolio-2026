@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', function () {
     let isScrolling = false;
     let scrollTarget = window.scrollY;
+    let rafId = null;
+    let autoScroll = false;
 
     function clampTarget(value) {
         const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
@@ -8,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     document.addEventListener('wheel', function (e) {
+        if (autoScroll) return;
         e.preventDefault();
 
         scrollTarget = clampTarget(scrollTarget + e.deltaY * 0.5);
@@ -16,6 +19,25 @@ document.addEventListener('DOMContentLoaded', function () {
             smoothScroll();
         }
     }, { passive: false });
+
+    document.addEventListener('mousedown', function (e) {
+        if (e.button === 1) {
+            autoScroll = true;
+            cancelSmoothScroll();
+            return;
+        }
+
+        const scrollbarStart = document.documentElement.clientWidth;
+        if (e.button === 0 && e.clientX >= scrollbarStart) {
+            cancelSmoothScroll();
+        }
+    });
+
+    document.addEventListener('mouseup', function (e) {
+        if (e.button === 1) {
+            autoScroll = false;
+        }
+    });
 
     window.addEventListener('scroll', function () {
         if (!isScrolling) {
@@ -47,10 +69,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (Math.abs(distance) > 0.5) {
             window.scrollTo(0, current + ease);
-            requestAnimationFrame(smoothScroll);
+            rafId = requestAnimationFrame(smoothScroll);
         } else {
             window.scrollTo(0, scrollTarget);
             isScrolling = false;
+            rafId = null;
         }
+    }
+
+    function cancelSmoothScroll() {
+        if (rafId !== null) {
+            cancelAnimationFrame(rafId);
+            rafId = null;
+        }
+        isScrolling = false;
+        scrollTarget = window.scrollY;
     }
 });
