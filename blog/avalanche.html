@@ -97,10 +97,10 @@
 }</code></pre>
 
                 <p>
-                    The <code><span class="type">CellUpdateContext</span></code> provides everything you need: position, cell properties, spatial queries, and movement commands. No wrestling with indices or coordinate systems. All cell behavior is defined through these callbacks, making it easy to create new materials and interactions. The core engine doesn't make any assumptions about cell types or behaviors, it just provides the framework and handles the heavy lifting. Here is for example a potential implementation for 
+                    The <code><span class="type">CellUpdateContext</span></code> provides everything you need: position, cell properties, spatial queries, and movement commands. No wrestling with indices or coordinate systems. All cell behavior is defined through these callbacks, making it easy to create new materials and interactions. The core engine doesn't make any assumptions about cell types or behaviors, it just provides the framework and handles the heavy lifting. Here is an example of a more involded sand update function:
                 </p>
 
-                <pre><code><span class="keyword">inline</span> <span class="keyword">bool</span> <span class="function">OnUpdateSand</span>(<span class="type">avl::CellUpdateContext</span>& <span class="variable">ctx</span>)
+                <pre><code><span class="keyword">inline</span> <span class="keyword">bool</span> <span class="function">sand_update</span>(<span class="type">avl::CellUpdateContext</span>& <span class="variable">ctx</span>)
 {
     <span class="keyword">const</span> <span class="type">int</span> <span class="variable">targetY</span> <span class="operator">=</span> <span class="variable">ctx</span>.<span class="property">y</span> <span class="operator">+</span> <span class="number">1</span>;
 
@@ -225,10 +225,10 @@
                     This allows developers to visualize sector boundaries and active chunks without including debug code in release builds.
                 </p>
 
-                <h2>What's Next</h2>
-                <p>
+                <!-- <h2>What's Next</h2> -->
+                <!-- <p>
                     The library is currently in active development for my Steam game Phyxel.
-                </p>
+                </p> -->
                 <p>
                     If you're working on a falling sand game or physics simulation, Avalanche could provide a solid foundation without forcing architectural decisions on your project. The code is designed to be readable, modifiable, and performance-conscious from the ground up.
                 </p>
