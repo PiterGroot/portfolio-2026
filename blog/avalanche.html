@@ -40,205 +40,23 @@
                     <br><br>Here is a video showcaing some of the behaviors that can be simulated using the API.
                 </p>
 
-               
-
                 <video src="../media/showcase.mp4" controls loop style="max-width: 100%; height: auto;"></video>
 
-                <h2>The Challenge</h2>
                 <p>
-                    Falling sand simulations are deceptively complex. You need to update potentially thousands of cells every frame, handle spatial queries efficiently, and provide a clean API that doesn't get in the way. The naive approach of updating every cell sequentially creates performance bottlenecks, directional biases, and non-deterministic behavior that breaks the simulation.
-                </p>
-                <h2>Architecture Overview and API Design Philosophy</h2>
-                <p>
-                    I chose the single-header format as both a technical challenge and a practical solution for ease of integration. Among other great c++ single-header libraries, drawing inspiration from Jacco Bikker's <a href="https://github.com/jbikker/tinybvh">tinybvh</a> project, I structured Avalanche to maintain clean separation between public API and implementation while keeping everything in one file:
+                    Falling sand simulations are deceptively complex. You potentially need to update thousands of cells every frame, handle spatial queries efficiently, and in my case I will also idealy need to provide a clean API that doesn't get in the way.
                 </p>
 
-                <pre><code><span class="comment">┌─────────────────────────────────────────────┐</span>
-<span class="comment">│   User Application (for example raylib)     │</span>
-<span class="comment">├─────────────────────────────────────────────┤</span>
-<span class="comment">│   Avalanche Public API                      │</span>
-<span class="comment">│   - World management                        │</span>
-<span class="comment">│   - Cell plotting                           │</span>
-<span class="comment">│   - Debug interface (optional)              │</span>
-<span class="comment">├─────────────────────────────────────────────┤</span>
-<span class="comment">│   Avalanche Core                            │</span>
-<span class="comment">│   - Chunking system                         │</span>
-<span class="comment">│   - Update batching                         │</span>
-<span class="comment">│   - Material system                         │</span>
-<span class="comment">│   - Cell processing                         │</span>
-<span class="comment">└─────────────────────────────────────────────┘</span></code></pre>
-
-                <p>
-                    Getting started requires just two lines of code:
+                <h2>The naive approach</h2>
+                <p> 
+                    My first attempt was to update every cell sequentially, but this approach had some major issues. There were big performance bottlenecks and arguably more important, non-deterministic behavior that broke the simulation because of directional biases.
                 </p>
 
-                <pre><code><span class="comment">// Include header and define implementation guard:</span>
-<span class="keyword">#define</span> <span class="variable">AVALANCHE_IMPLEMENTATION</span>
-<span class="keyword">#include</span> <span class="string">&lt;avalanche.hpp&gt;</span>
-
-<span class="comment">// Immediately ready to use:</span>
-<span class="type">avl::World</span> <span class="variable">world</span>(<span class="number">50</span>, <span class="number">500</span>);
-
-<span class="keyword">auto</span> <span class="variable">packedColor</span> <span class="operator">=</span> <span class="variable">avl::utils</span>::<span class="function">pack_RGBA</span>(<span class="number">1</span>, <span class="number">0.369f</span>, <span class="number">0.0f</span>, <span class="number">1.0f</span>);
-<span class="type">uint32_t</span> <span class="variable">cellData</span> <span class="operator">=</span> <span class="variable">avl::utils</span>::<span class="function">pack_user_data</span>(<span class="variable">HOT</span>, <span class="number">0</span>);
-<span class="variable">avl::utils</span>::<span class="function">register_cell</span>(<span class="number">1</span>, <span class="variable">packedColor</span>, <span class="variable">world</span>, <span class="variable">OnUpdateLava</span>, <span class="variable">cellData</span>);
-
-<span class="variable">world</span>.<span class="function">plot_circle</span>(<span class="variable">x</span>, <span class="variable">y</span>, <span class="variable">radius</span>, <span class="variable">cellType</span>);
-
-<span class="keyword">while</span> (<span class="keyword">true</span>)
-{
-    <span class="variable">world</span>.<span class="function">step_world</span>(<span class="variable">deltaTime</span>, <span class="variable">fixedTimeStep</span>);
-}</code></pre>
+                <p style="text-align: center;"><img src="../media/left-bias.gif" alt="Noita" style="max-width: 100%; height: auto;"></p>
 
                 <p>
-                    I wanted Avalanche to feel natural for game devs. The API centers around callback functions that define cell behavior:
+                    The directional bias issue arose because I was updating cells in a fixed order (top to bottom, left to right). This meant that cells processed earlier in the update cycle had an advantage over those processed later, leading to unrealistic behavior. In this case, particles would consistently fall to the left side of the screen because they were updated before those on the right. This was really evident in the first itteration of Avalanche as you can see above.
                 </p>
 
-                <pre><code><span class="keyword">bool</span> <span class="function">sand_update</span>(<span class="type">CellUpdateContext</span>& <span class="variable">ctx</span>) {
-    <span class="comment">// Check if cell can move down</span>
-    <span class="keyword">if</span> (<span class="variable">ctx</span>.<span class="function">is_empty</span>(<span class="variable">ctx</span>.<span class="property">x</span>, <span class="variable">ctx</span>.<span class="property">y</span> <span class="operator">+</span> <span class="number">1</span>)) {
-        <span class="variable">ctx</span>.<span class="function">move_cell</span>(<span class="variable">ctx</span>.<span class="property">x</span>, <span class="variable">ctx</span>.<span class="property">y</span> <span class="operator">+</span> <span class="number">1</span>);
-        <span class="keyword">return</span> <span class="keyword">true</span>;
-    }
-    <span class="keyword">return</span> <span class="keyword">false</span>;
-}</code></pre>
-
-                <p>
-                    The <code><span class="type">CellUpdateContext</span></code> provides everything you need: position, cell properties, spatial queries, and movement commands. No wrestling with indices or coordinate systems. All cell behavior is defined through these callbacks, making it easy to create new materials and interactions. The core engine doesn't make any assumptions about cell types or behaviors, it just provides the framework and handles the heavy lifting. Here is an example of a more involded sand update function:
-                </p>
-
-                <pre><code><span class="keyword">inline</span> <span class="keyword">bool</span> <span class="function">sand_update</span>(<span class="type">avl::CellUpdateContext</span>& <span class="variable">ctx</span>)
-{
-    <span class="keyword">const</span> <span class="type">int</span> <span class="variable">targetY</span> <span class="operator">=</span> <span class="variable">ctx</span>.<span class="property">y</span> <span class="operator">+</span> <span class="number">1</span>;
-
-    <span class="keyword">if</span> (<span class="operator">!</span><span class="variable">ctx</span>.<span class="function">is_out_of_bounds</span>(<span class="variable">ctx</span>.<span class="property">x</span>, <span class="variable">targetY</span>))
-    {
-        <span class="type">uint8_t</span> <span class="variable">downCellID</span> <span class="operator">=</span> <span class="number">0</span>;
-
-        <span class="keyword">if</span> (<span class="variable">ctx</span>.<span class="function">is_empty</span>(<span class="variable">ctx</span>.<span class="property">x</span>, <span class="variable">targetY</span>, <span class="variable">downCellID</span>))
-        {
-            <span class="variable">ctx</span>.<span class="function">move_cell</span>(<span class="variable">ctx</span>.<span class="property">x</span>, <span class="variable">targetY</span>);
-            <span class="keyword">return</span> <span class="keyword">true</span>;
-        }
-        <span class="keyword">else</span> <span class="keyword">if</span> (<span class="variable">ctx</span>.<span class="property">cellID</span> <span class="operator">!=</span> <span class="number">3</span> <span class="operator">&amp;&amp;</span> <span class="variable">downCellID</span> <span class="operator">==</span> <span class="number">3</span>)
-        {
-            <span class="keyword">if</span> (<span class="variable">avl</span>::<span class="variable">utils</span>::<span class="function">get_chance</span>(<span class="number">.5f</span>))
-                <span class="variable">ctx</span>.<span class="function">swap_cell</span>(<span class="variable">ctx</span>.<span class="property">x</span>, <span class="variable">targetY</span>);
-            <span class="keyword">else</span> {
-                <span class="variable">ctx</span>.<span class="function">notify_chunk</span>();
-            }
-            <span class="keyword">return</span> <span class="keyword">true</span>;
-        }
-    }
-
-    <span class="keyword">return</span> <span class="keyword">false</span>;
-}</code></pre>
-                <p>
-                    These update functions are registered with the library during cell type registration:
-                </p>
-
-                <code><pre><code><span class="variable">avl</span>::<span class="variable">utils</span>::<span class="function">register_cell</span>(
-        <span class="number">1</span>, <span class="comment">// Cell ID</span>
-        <span class="variable">packedColor</span>, <span class="comment">// Packed RGBA color</span>
-        <span class="variable">world</span>, <span class="comment">// Reference to the world</span>
-        &amp;<span class="variable">OnUpdateSand</span>, <span class="comment">// Update callback function</span>
-    <span class="number">0</span> <span class="comment">// Default user data</span>
-);</code></pre></code>
-
-                <p>
-                    The library also provides convenient plotting functions for common shapes:
-                </p>
-
-                <pre><code><span class="variable">world</span>.<span class="function">plot_circle</span>(<span class="variable">mouseX</span>, <span class="variable">mouseY</span>, <span class="number">20</span>, <span class="variable">sandCellID</span>);
-<span class="variable">world</span>.<span class="function">plot_cell</span>(<span class="variable">x</span>, <span class="variable">y</span>, <span class="variable">wallCellID</span>);
-<span class="variable">world</span>.<span class="function">plot_rectangle</span>(<span class="variable">x0</span>, <span class="variable">y0</span>, <span class="variable">x1</span>, <span class="variable">y1</span>, <span class="variable">wallCellID</span>);
-<span class="variable">world</span>.<span class="function">plot_line</span>(<span class="variable">startX</span>, <span class="variable">startY</span>, <span class="variable">endX</span>, <span class="variable">endY</span>, <span class="variable">waterCellID</span>);</code></pre>
-
-                <p>
-                    My API choices make the library easy to embed because:
-                </p>
-                <ul>
-                    <li>Minimal dependencies: The core library doesn't rely on external libraries and uses minimal STL</li>
-                    <li>No forced allocations: Users control memory through world size parameters</li>
-                    <li>Non-intrusive: Doesn't hijack the main loop or force specific threading models</li>
-                    <li>Header-only benefits: No linking steps, easier cross-platform deployment</li>
-                </ul>
-
-                <h3>User Data System</h3>
-                <p>
-                    Each cell carries 32 bits of custom data, split into flags and values. This allows you to implement properties like temperature, lifetime, or state machines without modifying the core library:
-                </p>
-
-                <pre><code><span class="comment">// Pack custom data into cells</span>
-<span class="type">uint32_t</span> <span class="variable">userData</span> <span class="operator">=</span> <span class="variable">avl::utils</span>::<span class="function">pack_user_data</span>(
-    <span class="variable">BURNING_FLAG</span> <span class="operator">|</span> <span class="variable">WET_FLAG</span>,  <span class="comment">// 16 bits of flags</span>
-    <span class="variable">temperature</span>               <span class="comment">// 16 bits of data</span>
-);</code></pre>
-
-                <p>
-                    The library also provides extended packing for more granular control:
-                </p>
-
-                <pre><code><span class="comment">// Full userData layout: [flags:16][byte1:8][byte0:8]</span>
-<span class="type">uint32_t</span> <span class="variable">userData</span> <span class="operator">=</span> <span class="variable">avl::utils</span>::<span class="function">pack_user_data_ex</span>(<span class="variable">flags</span>, <span class="variable">byte0</span>, <span class="variable">byte1</span>);</code></pre>
-
-                <h2>Solving the Directional Bias Problem</h2>
-                <p>
-                    One of the biggest challenges in falling sand simulations is preventing directional bias. In my early implementations, I would process cells immediately as I iterated over them. This created a noticeable left-side bias where sand would consistently pile up more on one side.
-                </p>
-
-                <img src="../media/left-bias.gif" alt="Directional bias demonstration" style="max-width: 100%; height: auto;">
-
-                <p>
-                    The solution was to implement a batched update system. Instead of immediately updating cells, I cache desired moves and commit them atomically after iteration:
-                </p>
-
-                <pre><code><span class="type">std::vector</span>&lt;<span class="type">std::pair</span>&lt;<span class="type">int</span>, <span class="type">int</span>&gt;&gt; <span class="variable">_cellChanges</span>;  <span class="comment">// Destination, Source</span>
-
-<span class="comment">// Cache moves during simulation - nothing is touched yet</span>
-<span class="variable">_cellChanges</span>.<span class="function">emplace_back</span>(<span class="variable">toIndex</span>, <span class="variable">fromIndex</span>);
-
-<span class="comment">// Sort and commit atomically after iteration:</span>
-<span class="type">std::sort</span>(<span class="variable">_cellChanges</span>.<span class="function">begin</span>(), <span class="variable">_cellChanges</span>.<span class="function">end</span>());
-<span class="function">_commit_cells</span>();</code></pre>
-
-                <p>
-                    This batching approach ensures deterministic behavior and prevents cells from being updated multiple times per frame. The sorting step groups movements to the same destination, allowing random selection from conflicting moves to eliminate bias.
-                </p>
-
-                <h2>Performance Considerations</h2>
-                <p>
-                    Several design decisions were made specifically for cache efficiency and CPU performance:
-                </p>
-
-                <ul>
-                    <li>Cell data is stored in separate arrays (Structure of Arrays) for better memory access patterns and cache locality</li>
-                    <li>Cell movements are batched and committed after updates to avoid data races and enable deterministic behavior</li>
-                    <li>Chunk boundaries trigger neighboring chunk updates only when cells near edges are modified</li>
-                    <li>Random selection from pending moves prevents directional bias without excessive sorting overhead</li>
-                    <li>The sleeping chunk system eliminates unnecessary iteration over static regions</li>
-                </ul>
-
-                <h2>Optional Debug Visualization</h2>
-                <p>
-                    Avalanche includes optional debugging support that can be enabled with a preprocessor definition:
-                </p>
-
-                <pre><code><span class="keyword">#define</span> <span class="variable">AVALANCHE_DEBUG_DRAWER</span>
-<span class="variable">world</span>.<span class="function">set_debug_drawer</span>(&<span class="variable">customDrawer</span>);
-<span class="variable">world</span>.<span class="function">debug_draw</span>();</code></pre>
-
-                <p>
-                    This allows developers to visualize sector boundaries and active chunks without including debug code in release builds.
-                </p>
-
-                <!-- <h2>What's Next</h2> -->
-                <!-- <p>
-                    The library is currently in active development for my Steam game Phyxel.
-                </p> -->
-                <p>
-                    If you're working on a falling sand game or physics simulation, Avalanche could provide a solid foundation without forcing architectural decisions on your project. The code is designed to be readable, modifiable, and performance-conscious from the ground up.
-                </p>
             </div>
         </article>
     </div>
