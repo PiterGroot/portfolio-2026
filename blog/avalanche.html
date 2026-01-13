@@ -7,6 +7,7 @@
     <title>Tab title</title>
     <link rel="stylesheet" href="../style/styles.css">
     <link rel="stylesheet" href="../style/blog-style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
 </head>
 
 <body>
@@ -14,6 +15,8 @@
     <script src="../js/particles.js"></script>
     <script src="../js/app.js"></script>
     <script src="../js/smooth-scroll.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" data-autoloader-path="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/"></script>
 
     <div class="blog-post-container">
         <a href="../index.html" class="back-link">← Back</a>
@@ -63,11 +66,34 @@
                     The directional bias issue arose because I was updating cells in a fixed order (top to bottom, left to right). This meant that cells processed earlier in the update cycle had an advantage over those processed later, leading to unrealistic behavior. In this case, particles would consistently fall to the left side of the screen because they were updated before those on the right. This was really evident in the first itteration of Avalanche as you can see above.
                 </p>
 
-                <h2>Improving the simulation</h2>
-
+                <h2>Improving the simulation</h2>                
                 <p>
                     To address these issues, I took a step back and re-evaluated my approach. I implemented a few key changes, one of them whas double buffering the simulation state. This meant maintaining two copies of the grid: one for reading the current state and another for writing the updated state. By doing this, I ensured that all cells were updated based on the same initial conditions, eliminating directional biases.
                 </p>
+
+                <pre><code class="language-cpp">for (int i = 0; i &lt; activeChunks.size(); i++)
+{
+    SectorChunk* chunk = activeChunks[i];
+
+    for (int x = 0; x &lt; chunk-&gt;chunkSize; x++)
+    {
+        for (int y = 0; y &lt; chunk-&gt;chunkSize; y++)
+        {
+            int xPos = x + chunk-&gt;chunkX;
+            int yPos = y + chunk-&gt;chunkY;
+
+            Cell* cell = GetCell(xPos, yPos);
+
+            if (cell-&gt;MoveFlags &amp; CellMoveFlags::MOVE_DOWN &amp;&amp; MoveDown(xPos, yPos, chunk, cell)) {}
+            else if (cell-&gt;MoveFlags &amp; CellMoveFlags::MOVE_UP &amp;&amp; MoveUp(xPos, yPos, chunk, cell)) {}
+            else if (cell-&gt;MoveFlags &amp; CellMoveFlags::FLOAT_UP &amp;&amp; FloatUp(xPos, yPos, chunk, cell)) {}
+            else if (cell-&gt;MoveFlags &amp; CellMoveFlags::MOVE_DOWN_SIDE &amp;&amp; MoveSideDown(xPos, yPos, chunk, cell)) {}
+            else if (cell-&gt;MoveFlags &amp; CellMoveFlags::MOVE_SIDE &amp;&amp; MoveSide(xPos, yPos, chunk, cell)) {}
+            else if (cell-&gt;MoveFlags &amp; CellMoveFlags::MOVE_LEFT &amp;&amp; MoveLeft(xPos, yPos, chunk, cell)) {}
+            else if (cell-&gt;MoveFlags &amp; CellMoveFlags::MOVE_RIGHT &amp;&amp; MoveRight(xPos, yPos, chunk, cell)) {}
+        }
+    }
+}</code></pre>
 
                 <p>
                     Additionally, I reworked the cell update batching so that it now only processes active cells inside chunks (those that contain particles) and their immediate neighbors. This significantly reduced the number of checks I needed to do per frame and improved overall performance.
