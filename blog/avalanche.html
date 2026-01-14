@@ -32,7 +32,7 @@
                 <h2>Introduction</h2>
                 <p>
                     Ever played the game <a href="https://noitagame.com/">Noita?</a> I have, and I love it. In Noita, every pixel on the screen is simulated in the physics engine called <a href="https://nollagames.com/fallingeverything/">the falling everything engine</a>.
-                    It is a very impressive falling sand engine and as part of my school assignment, I was inspired to build my own fallling sand engine/library.
+                    It is a very impressive falling sand engine and as part of my school assignment, I was inspired to build my own falling sand engine/library.
                 </p>
                  
                 <p style="text-align: center;"><img src="../media/noita.gif" alt="Noita" style="max-width: 100%; height: auto;"></p>
@@ -40,7 +40,7 @@
                 <p> 
                     That's why I started working on Avalanche, a production-ready falling sand physics engine designed as a single-header C++ library. The goal was to create a fast, flexible system to simulate thousands of particles on the CPU that developers could integrate into their projects with minimal friction. In Avalanche, all cell behaviors are user-definable via a clean API, allowing for easy extension and customization. 
                     
-                    <br><br>Here is a video showcaing some of the behaviors that can be simulated using the API.
+                    <br><br>Here is a video showcasing some of the behaviors that can be simulated using the API.
                 </p>
 
                 <video src="../media/showcase.mp4" controls loop style="max-width: 100%; height: auto;"></video>
@@ -52,23 +52,23 @@
                     <p style="text-align: center;"><img src="../media/sand_simulation.gif" alt="Noita" style="max-width: 100%; height: auto;"></p>
                     <p style="text-align: center; font-size: smaller; font-style: italic;">GIF by John Jackson | <a href="https://noitagame.com/">Recreating Noita's Sand Simulation in C and OpenGL | Game Engineering</a></p>
                     
-                    That being said, falling sand simulations are deceptively complex. It is relatively easy to set-up a mediocre falling sand sim but there are a lot of considerations to make in order to maintain flexible and performant. You potentially need to update thousands of cells every frame, handle spatial queries efficiently, and in my case I will also idealy need to provide a clean API that doesn't get in the way.
+                    That being said, falling sand simulations are deceptively complex. It is relatively easy to set-up a mediocre falling sand sim but there are a lot of considerations to make in order to maintain flexible and performant. You potentially need to update thousands of cells every frame, handle spatial queries efficiently, and in my case I will also ideally need to provide a clean API that doesn't get in the way.
                 </p>
 
                 <h2>The naive approach</h2>
                 <p> 
-                    My first attempt was to update every cell sequentially, but this approach had some major issues. There were big performance bottlenecks and arguably more important, non-deterministic behavior that broke the simulation because of directional biases.
+                    My first attempt was to update every cell sequentially, but this approach had some major issues. There were big performance bottlenecks and arguably more importantly, there was non-deterministic behavior that broke the simulation because of directional biases.
                 </p>
 
                 <p style="text-align: center;"><img src="../media/left-bias.gif" alt="Noita" style="max-width: 100%; height: auto;"></p>
 
                 <p>
-                    The directional bias issue arose because I was updating cells in a fixed order (top to bottom, left to right). This meant that cells processed earlier in the update cycle had an advantage over those processed later, leading to unrealistic behavior. In this case, particles would consistently fall to the left side of the screen because they were updated before those on the right. This was really evident in the first itteration of Avalanche as you can see above.
+                    The directional bias issue arose because I was updating cells in a fixed order (top to bottom, left to right). This meant that cells processed earlier in the update cycle had an advantage over those processed later, leading to unrealistic behavior. In this case, particles would consistently fall to the left side of the screen because they were updated before those on the right. This was really evident in the first iteration of Avalanche as you can see above.
                 </p>
 
                 <h2>Improving the simulation</h2>                
                 <p>
-                    To address these issues, I took a step back and re-evaluated my approach. I implemented a few key changes, one of them whas double buffering the simulation state. This meant maintaining two copies of the grid: one for reading the current state and another for writing the updated state. By doing this, I ensured that all cells were updated based on the same initial conditions, eliminating directional biases.
+                    To address these issues, I took a step back and re-evaluated my approach. I implemented a few key changes, one of them was double buffering the simulation state. This meant maintaining two copies of the grid: one for reading the current state and another for writing the updated state. By doing this, I ensured that all cells were updated based on the same initial conditions, eliminating directional biases.
                 </p>
 
                 <pre><code class="language-cpp">for (int i = 0; i &lt; activeChunks.size(); i++)
