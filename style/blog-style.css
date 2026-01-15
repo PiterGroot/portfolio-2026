@@ -1,5 +1,5 @@
  .blog-post-container {
-     max-width: 800px;
+     max-width: 1000px;
      margin: 0 auto;
      padding: 40px 32px;
      position: relative;
@@ -142,4 +142,45 @@
 
  .blog-post-content a:hover {
      color: #8ab4e0;
+ }
+
+ /* Mobile Responsive Styles */
+ @media (max-width: 768px) {
+     .blog-post-container {
+         max-width: 100%;
+         padding: 24px 16px;
+     }
+
+     .blog-post-title {
+         font-size: 24px;
+     }
+
+     .blog-post-content h2 {
+         font-size: 22px;
+     }
+
+     .blog-post-content h3 {
+         font-size: 18px;
+     }
+
+     .blog-post-content {
+         font-size: 16px;
+     }
+
+     .blog-post-content pre {
+         padding: 12px;
+         font-size: 14px;
+         overflow-x: auto;
+         -webkit-overflow-scrolling: touch;
+     }
+
+     .blog-post-content code {
+         font-size: 14px;
+     }
+
+     .blog-post-content img,
+     .blog-post-content video {
+         max-width: 100% !important;
+         height: auto !important;
+     }
  }

@@ -19,6 +19,8 @@
         <article>
             <header class="blog-post-header">
                 <h1 class="blog-post-title">Building Avalanche: A C++ Falling Sand Engine Engine</h1>
+                <p style="text-align: center;">Simulating one million falling sand particles on the CPU.</p>
+
                 <p class="blog-post-meta">January 7, 2026</p>
             </header>
 
@@ -33,12 +35,24 @@
                 <p style="text-align: center;"><img src="../media/noita.gif" alt="Noita" style="max-width: 100%; height: auto;"></p>
 
                 <p> 
-                    That's why I started working on Avalanche, a production-ready falling sand physics engine designed as a single-header C++ library. The goal was to create a fast, flexible system to simulate thousands of particles on the CPU that developers could integrate into their projects with minimal friction. In Avalanche, all cell behaviors are user-definable via a clean API, allowing for easy extension and customization. 
+                    That's how I started working on Avalanche, a production-ready falling sand physics engine designed as a single-header C++ library. The goal was to create a fast, flexible system to simulate thousands of particles on the CPU that developers could integrate into their projects with minimal friction. In Avalanche, all cell behaviors are user-definable via a clean API, allowing for easy extension and customization. 
                     
                     <br><br>Here is a video showcasing some of the behaviors that can be simulated using the API.
                 </p>
 
                 <video src="../media/showcase.mp4" controls loop style="max-width: 100%; height: auto;"></video>
+
+                <h2>Project goals</h2>
+                <p>
+                    It is fun to set goals for personal projects like this. Here are the main objectives I set out to achieve:
+                    <ul>
+                        <li><strong>Performance:</strong> The engine should be capable of simulating one million particles in real-time on a standard CPU (Ryzen 5 9600x, 3.90 GHz, 6 cores, 12 threads).</li>
+                        <li><strong>Flexibility:</strong> Users should be able to define custom cell types and behaviors easily through a clean API.</li>
+                        <li><strong>Ease of Integration:</strong> The engine should be designed as a single-header C++ library for easy integration into existing projects.</li>
+                        <li><strong>Determinism:</strong> The simulation should produce consistent results across runs given the same initial conditions.</li>
+
+                    <br>Curious about the implementation details and if I achieved these goals? Keep reading!
+                </p>
 
                 <h2>What is a falling sand simulation?</h2>
                 <p>
@@ -171,7 +185,208 @@ Games Now! | <a href="https://www.youtube.com/watch?v=Mr3E_voEG8Y">Nolla Games: 
                 <video src="../media/chunking.mp4" controls loop style="max-width: 100%; height: auto;"></video>
                 <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing double buffering and chunking implementation. Notice there is no directional bias anymore.</p>
 
+                 <h2>Flexibility and API Design</h2>
+                <p>
+                    One of the project goals was to provide a clean and flexible API that allows users to define custom cell types and behaviors easily. This had me stumped for a while. Initially, I had one enum that defined all known cell moves and behaviors, but this quickly became unmanageable as I added more cell types and more importantly, users couldn't define their own cell types without modifying the engine code itself. This is bad because an engine like this should not make any assumptions about what kind of cells the user wants to simulate.
+                </p>
 
+                <pre><code class="language-cpp">enum class CellMoveFlags : uint8_t 
+{
+    MOVE_DOWN      = 0b00000001,
+    MOVE_DOWN_SIDE = 0b00000010,
+    MOVE_SIDE      = 0b00000100,
+    FLOAT_UP       = 0b01000000,
+};
+
+// Combining move flags using bitwise OR:
+CellMoveFlags flags = CellMoveFlags::MOVE_DOWN | CellMoveFlags::MOVE_SIDE;</code></pre>
+
+                <p>
+                    To solve this, I designed a more data-driven approach where users can define their own cell types and behaviors using function pointers. This is all possible with the <code>CellUpdateContext</code> struct. This struct is a context object passed to cell update functions, providing them with all the necessary information and utilities to perform their behavior. This allows users to create new cell types without modifying the engine code itself, making it much more flexible and extensible. <br><br>Here is an example of how a user-defined cell update function can look like:
+                </p>
+
+                <pre><code class="language-cpp">bool UpdateSandCell(avl::CellUpdateContext& ctx)
+{
+	const int targetY = ctx.y + 1;
+	if (!ctx.is_out_of_bounds(ctx.x, targetY))
+	{
+		uint8_t downCellID = 0;
+		if (ctx.is_empty(ctx.x, targetY, downCellID))
+		{
+			ctx.move_cell(ctx.x, targetY);
+			return true;
+		}
+		else if (ctx.cellID != 3 && downCellID == 3)
+		{
+			if (avl::utils::get_chance(.5f))
+				ctx.swap_cell(ctx.x, targetY);
+			else
+				ctx.notify_chunk();
+
+			return true;
+		}
+	}
+}</code></pre>
+                <p>
+                    In this example, the <code>UpdateSandCell</code> function defines the behavior of a sand cell. It checks the cell directly below it, and if that cell is empty, it moves down. If the cell below is water (cell ID 3), it swaps places with the water cell half of the time, simulating sand sinking through water. The function uses methods provided by the <code>CellUpdateContext</code> to interact with the simulation, such as checking for out-of-bounds conditions, determining if a cell is empty, moving cells, and swapping cells.
+                </p>
+
+                <pre><code class="language-cpp">avl::utils::register_cell
+(
+    4,                                                  //Cell ID.
+    avl::utils::pack_RGBA(1, 0.369f, 0.0f, 1.0f),       //Packed cell color. 
+    *world,                                             //Pointer to the world. 
+    OnUpdateFire,                                       //Cell update function.
+    avl::CellUserData(HOT | SHORT_LIFE_TIME, 0).pack()  //Initial user data (flags + value).
+);</code></pre>
+
+                <p>
+                    Registering a cell is trivial with the API. In this example, I register a fire cell with ID 4, a bright orange color, and associate it with the <code>OnUpdateFire</code> function. The initial user data is packed with flags indicating that the cell is hot and has a short lifetime.
+                </p>
+
+                <p>
+                    This works great for simple behaviors like sand and water, but more complex behaviors require the use of the user data field that is associated with each cell. This field can store arbitrary <code>uint32_t</code> data defined by the user, allowing for more complex state management within cell update functions. For example, here is the fire update function which I shoved above that uses the user data system:
+                </p>
+
+
+                <pre><code class="language-cpp">bool OnUpdateFire(avl::CellUpdateContext& ctx)
+{
+	static uint32_t colors[5] =
+	{
+		avl::utils::pack_RGBA(0.612f, 0.169f, 0.067f, 1.0f),
+		avl::utils::pack_RGBA(1.0f, 0.416f, 0.0f, 1.0f),
+		avl::utils::pack_RGBA(0.498f, 0.0f, 0.0f, 1.0f),
+		avl::utils::pack_RGBA(1.0f, 0.592f, 0.0f, 1.0f),
+		avl::utils::pack_RGBA(0.498f, 0.2f, 0.0f, 1.0f)
+	};
+
+	ctx.notify_chunk();
+	ctx.notify_sector();
+
+	// Get current user data.
+	auto data = ctx.get_user_data();
+
+	// Update lifetime.
+	int randValue = avl::utils::get_random_value(0, 1);
+	data.value += (uint16_t)randValue;
+
+	// Determine cell lifetime based on flags.
+	int cellLifeTime = 75;
+
+	if (data.has_flag(CellFlags::LONG_LIFE_TIME))
+		cellLifeTime = 150;
+	else if (data.has_flag(CellFlags::SHORT_LIFE_TIME))
+		cellLifeTime = 40;
+
+	// Randomly change color.
+	if (randValue == 0 && avl::utils::get_chance(0.5f))
+		ctx.sector->_activeCellColors[ctx.cellIndex] = colors[avl::utils::get_random_value(0, 4)];
+
+	// Check if fire should go out.
+	if (data.value == cellLifeTime)
+	{
+		if (!avl::utils::get_chance(.9f))
+			ctx.world->plot_cell(ctx.x + ctx.sector->worldX, ctx.y + ctx.sector->worldY, 6); // Spawn smoke.
+		else
+			ctx.world->plot_cell(ctx.x + ctx.sector->worldX, ctx.y + ctx.sector->worldY, 0); // Go out.
+
+		data.value = 0;
+		data.clear_all_flags();
+		
+		ctx.set_user_data(data);
+		return false;
+	}
+
+	ctx.set_user_data(data);
+
+	// Movement logic.
+	if (!data.has_flag(CellFlags::LONG_LIFE_TIME) && !data.has_flag(CellFlags::IMMOVABLE))
+	{
+		if (!FloatUp(ctx, 2))
+			return MoveSide(ctx);
+	}
+
+	return true;
+}</code></pre>
+                <p>
+                    In this example, the <code>OnUpdateFire</code> function defines the behavior of a fire cell. It uses the user data field to track the fire's lifetime and determine when it should go out. The function also changes the fire's color randomly and allows it to spread to neighboring cells. The use of flags in the user data field enables different fire behaviors, such as long or short lifetimes and immovability. Because every cell has its own user data field, multiple fire cells can exist simultaneously with independent states and behaviors and the flag <code>FLAMMABLE</code> can be added to other cell types to allow them to catch fire when adjacent to a fire cell.
+                </p>
+
+                <p>
+                    If you look at this fire implementation, you might notice that there is no logic yet that actually sets other cells aflame. That's exactly the use case for the global <code>CellPostProcessor</code> update callback, this callback can be used when you want to perform some logic not based on a specific cell ID but rather on any cell with a specific user data flag or certain properties. This callback is called for every active cell in the simulation after all individual cell update functions have been called. This allows for global behaviors like fire spreading to adjacent flammable cells, regardless of their specific cell ID.
+                </p>
+
+                <pre><code class="language-cpp">void UpdateFireSpread(avl::CellUpdateContext& ctx, avl::CellUserData data)
+{
+	if (data.has_flag(CellFlags::FLAMMABLE)) // Fire spread implementation.
+	{
+		avl::Vector2Int upIndex = { ctx.x, ctx.y - 1 };
+		avl::Vector2Int downIndex = { ctx.x, ctx.y + 1 };
+		avl::Vector2Int leftIndex = { ctx.x - 1, ctx.y };
+		avl::Vector2Int rightIndex = { ctx.x + 1, ctx.y };
+
+		// Check if any neighbor has the HOT flag.
+		bool up = !ctx.is_out_of_bounds(upIndex.x, upIndex.y) &&
+			ctx.get_user_data(upIndex.x, upIndex.y).has_flag(CellFlags::HOT);
+		bool down = !ctx.is_out_of_bounds(downIndex.x, downIndex.y) &&
+			ctx.get_user_data(downIndex.x, downIndex.y).has_flag(CellFlags::HOT);
+		bool left = !ctx.is_out_of_bounds(leftIndex.x, leftIndex.y) &&
+			ctx.get_user_data(leftIndex.x, leftIndex.y).has_flag(CellFlags::HOT);
+		bool right = !ctx.is_out_of_bounds(rightIndex.x, rightIndex.y) &&
+			ctx.get_user_data(rightIndex.x, rightIndex.y).has_flag(CellFlags::HOT);
+
+		if (up || down || left || right)
+		{
+			// Increment lifetime.
+			data.value += (uint16_t)avl::utils::get_random_value(0, 2);
+
+			// Force keep the chunks and this sector active to prevent fire from going out too quickly.
+			avl::SectorSimulationChunk** chunkBuffer = nullptr;
+
+			if (ctx.get_chunk_safe(upIndex.x, upIndex.y, chunkBuffer))
+				ctx.notify_chunk(chunkBuffer[0]);
+			if (ctx.get_chunk_safe(downIndex.x, downIndex.y, chunkBuffer))
+				ctx.notify_chunk(chunkBuffer[0]);
+			if (ctx.get_chunk_safe(leftIndex.x, leftIndex.y, chunkBuffer))
+				ctx.notify_chunk(chunkBuffer[0]);
+			if (ctx.get_chunk_safe(rightIndex.x, rightIndex.y, chunkBuffer))
+				ctx.notify_chunk(chunkBuffer[0]);
+
+			ctx.notify_chunk(); 
+			ctx.notify_sector();
+
+			if (data.value == FIRE_SPREAD_TIME)
+			{
+				data.value = 0;
+				data.clear_flag(CellFlags::FLAMMABLE);
+
+				if (ctx.get_cell_id(upIndex.x, upIndex.y) == 0)
+				{
+					data.set_flag(CellFlags::HOT);
+					ctx.set_user_data(data);
+					ctx.world->plot_cell(ctx.x + ctx.sector->worldX, ctx.y + ctx.sector->worldY, 4);
+				}
+			}
+			else if (data.value > FIRE_LIFETIME) // Reset if taking too long.
+			{
+				data.value = 0;
+				ctx.set_user_data(data);
+			}
+			else
+			{
+				// Save updated lifetime.
+				ctx.set_user_data(data);
+			}
+		}
+	}</code></pre>
+                <p>
+                    In this example, the <code>UpdateFireSpread</code> function checks if a cell is flammable and has any neighboring cells that are hot (on fire). If so, it increments the cell's lifetime counter. Once the counter reaches a certain threshold, the cell catches fire by plotting a new fire cell at its location. The function also ensures that the relevant chunks and sectors remain active to prevent the fire from going out too quickly. This global update mechanism allows for dynamic interactions between different cell types based on their properties rather than their specific IDs.
+                </p>
+
+                <p>
+                    That is how fire is implemented in Avalanche! There are many more cell types and behaviors implemented in the demo project, but I won't go into all of them here. <br><br>Here is a video showcasing the fire spread behavior in action:
+                </p>
+                <video src="../media/firespread.mp4" controls loop style="max-width: 100%; height: auto;"></video>
             </div>
         </article>
     </div>
