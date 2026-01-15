@@ -4,11 +4,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tab title</title>
+    <title>Avalanche Engine – C++ Falling Sand Simulation</title>
+    <meta name="description" content="Avalanche is a single-header C++ falling sand engine that simulates one million particles in real time using double buffering, chunking, and multithreading.">
+    <link rel="canonical" href="https://pitergroot.github.io/portfolio-2026/blog/avalanche.html">
+
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Avalanche Engine – C++ Falling Sand Simulation">
+    <meta property="og:description" content="Avalanche is a single-header C++ falling sand engine that simulates one million particles in real time using double buffering, chunking, and multithreading.">
+    <meta property="og:url" content="https://pitergroot.github.io/portfolio-2026/blog/avalanche.html">
+    <meta property="og:image" content="https://pitergroot.github.io/portfolio-2026/media/logo.png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Avalanche Engine – C++ Falling Sand Simulation">
+    <meta name="twitter:description" content="Avalanche is a single-header C++ falling sand engine that simulates one million particles in real time using double buffering, chunking, and multithreading.">
+    <meta name="twitter:image" content="https://pitergroot.github.io/portfolio-2026/media/logo.png">
+
     <link rel="stylesheet" href="../style/styles.css">
     <link rel="stylesheet" href="../style/blog-style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-okaidia.min.css">
 
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Building Avalanche: A C++ Falling Sand Engine",
+      "description": "Avalanche is a single-header C++ falling sand engine that simulates one million particles in real time using double buffering, chunking, and multithreading.",
+      "datePublished": "2026-01-07",
+      "dateModified": "2026-01-07",
+      "author": {
+        "@type": "Person",
+        "name": "Piter Groot"
+      },
+      "image": "https://pitergroot.github.io/portfolio-2026/media/logo.png",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://pitergroot.github.io/portfolio-2026/blog/avalanche.html"
+      },
+      "url": "https://pitergroot.github.io/portfolio-2026/blog/avalanche.html"
+    }
+    </script>
 </head>
 
 <body>
@@ -31,7 +65,7 @@
                     It is a very impressive falling sand engine and as part of my school assignment, I was inspired to build my own falling sand engine/library.
                 </p>
                  
-                <p style="text-align: center;"><img src="../media/noita.gif" alt="Noita" style="max-width: 100%; height: auto;"></p>
+                <p style="text-align: center;"><img src="../media/noita.gif" alt="Noita" style="max-width: 100%; height: auto;" loading="lazy" decoding="async"></p>
 
                 <p> 
                     That's how I started working on Avalanche, a production-ready falling sand physics engine designed as a single-header C++ library. The goal was to create a fast, flexible system to simulate thousands of particles on the CPU that developers could integrate into their projects with minimal friction. In Avalanche, all cell behaviors are user-definable via a clean API, allowing for easy extension and customization. 
@@ -39,7 +73,7 @@
                     <br><br>Here is a video showcasing some of the behaviors that can be simulated using the API.
                 </p>
 
-                <video src="../media/showcase.mp4" controls loop style="max-width: 100%; height: auto;"></video>
+                <video src="../media/showcase.mp4" controls loop preload="metadata" playsinline style="max-width: 100%; height: auto;"></video>
 
                 <h2 id="project-goals">Project goals</h2>
                 <p>
@@ -74,7 +108,7 @@
                 <p>
                     Falling sand simulations are a type of cellular automaton where each cell in a grid represents a particle or empty space. The simulation updates the state of each cell based on predefined rules that dictate how particles interact with each other and their environment. Common behaviors include falling due to gravity, spreading out when they hit the ground, and interacting with other particle types (e.g., water flowing around sand).
                     
-                    <p style="text-align: center;"><img src="../media/sand_simulation.gif" alt="Noita" style="max-width: 100%; height: auto;"></p>
+                    <p style="text-align: center;"><img src="../media/sand_simulation.gif" alt="Noita" style="max-width: 100%; height: auto;" loading="lazy" decoding="async"></p>
                     <p style="text-align: center; font-size: smaller; font-style: italic;">GIF by John Jackson | <a href="https://noitagame.com/">Recreating Noita's Sand Simulation in C and OpenGL | Game Engineering</a></p>
                     
                     That being said, falling sand simulations are deceptively complex. It is relatively easy to set-up a mediocre falling sand sim but there are a lot of considerations to make in order to maintain flexible and performant. You potentially need to update thousands of cells every frame, handle spatial queries efficiently, and in my case I will also ideally need to provide a clean API that doesn't get in the way.
@@ -85,7 +119,7 @@
                     My first attempt was to update every cell sequentially without any chunking or whatnot, this approach had some major issues. There were big performance bottlenecks and arguably more importantly, there was non-deterministic behavior that broke the simulation because of directional biases.
                 </p>
 
-                <video src="../media/left-bias.mp4" controls loop style="max-width: 100%; height: auto;"></video>
+                <video src="../media/left-bias.mp4" controls loop preload="metadata" playsinline style="max-width: 100%; height: auto;"></video>
                 <p style="text-align: center; font-size: smaller; font-style: italic;">Intense left-bias in first iteration of the simulation.</p>
 
                 <pre><code class="language-cpp">
@@ -120,7 +154,7 @@ if (shouldUpdate)
 
                 
                 <h4>1. Randomizing the update direction order</h4>
-                 <p style="text-align: center;"><img src="../media/randomized-update-order.gif" alt="Noita" style="max-width: 100%; height: auto;"></p>
+                 <p style="text-align: center;"><img src="../media/randomized-update-order.gif" alt="Noita" style="max-width: 100%; height: auto;" loading="lazy" decoding="async"></p>
                     <p style="text-align: center; font-size: smaller; font-style: italic;">GIF from 
 Games Now! | <a href="https://www.youtube.com/watch?v=Mr3E_voEG8Y">Nolla Games: Making of Noita</a></p>
                 
@@ -129,7 +163,7 @@ Games Now! | <a href="https://www.youtube.com/watch?v=Mr3E_voEG8Y">Nolla Games: 
                 </p>
 
                 <h4>2. Double buffering</h4>
-                <video src="../media/double-buffer.mp4" controls loop style="max-width: 100%; height: auto;"></video>
+                <video src="../media/double-buffer.mp4" controls loop preload="metadata" playsinline style="max-width: 100%; height: auto;"></video>
 
                 <p>
                     This solution involves keeping track of a "desired" moves buffer in addition to the main simulation grid. During each update cycle, cells determine their desired moves based on their current state and the states of neighboring cells, and write these desired moves to the buffer. Once all cells have been processed, the simulation applies the desired moves from the buffer to the main grid in a separate pass. This approach ensures that all cells are updated based on the same initial state, eliminating directional bias. It is a bit more complex to implement than randomizing the update order, but it could provide more consistent results without having to mess with the update order.
@@ -198,7 +232,7 @@ Games Now! | <a href="https://www.youtube.com/watch?v=Mr3E_voEG8Y">Nolla Games: 
     }
 }</code></pre>
 
-                <video src="../media/chunking.mp4" controls loop style="max-width: 100%; height: auto;"></video>
+                <video src="../media/chunking.mp4" controls loop preload="metadata" playsinline style="max-width: 100%; height: auto;"></video>
                 <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing double buffering and chunking implementation. Notice there is no directional bias anymore.</p>
 
                  <h2 id="flexibility-api">Flexibility and API Design</h2>
@@ -405,7 +439,7 @@ CellMoveFlags flags = CellMoveFlags::MOVE_DOWN | CellMoveFlags::MOVE_SIDE;</code
                     That is how fire is implemented in Avalanche! There are many more cell types and behaviors implemented in the demo project, but I won't go into all of them here. <br><br>Here is a video showcasing the fire spread behavior in action:
                 </p>
 
-                <video src="../media/firespread.mp4" controls loop style="max-width: 100%; height: auto;"></video>
+                <video src="../media/firespread.mp4" controls loop preload="metadata" playsinline style="max-width: 100%; height: auto;"></video>
 
                 <h2 id="multithreading">Multithreading</h2>
                 <p>
@@ -414,7 +448,7 @@ CellMoveFlags flags = CellMoveFlags::MOVE_DOWN | CellMoveFlags::MOVE_SIDE;</code
                 </p>
 
                 <h4>1. Checkerboard updating pattern</h4>
-                <p style="text-align: center;"><img src="../media/noita-multithread.gif" alt="Noita" style="max-width: 100%; height: auto;"></p>
+                <p style="text-align: center;"><img src="../media/noita-multithread.gif" alt="Noita" style="max-width: 100%; height: auto;" loading="lazy" decoding="async"></p>
                 <p style="text-align: center; font-size: smaller; font-style: italic;">GIF from GDC Festival of Gaming | <a href="https://www.youtube.com/watch?v=prXuyMCgbTc"> Exploring the Tech and Design of Noita</a></p>
 
                 <p>
@@ -422,7 +456,7 @@ CellMoveFlags flags = CellMoveFlags::MOVE_DOWN | CellMoveFlags::MOVE_SIDE;</code
                 </p>
 
                 <h4>2. Row-based updating pattern</h4>
-                <p style="text-align: center;"><img src="../media/row-based-multithread.gif" alt="Noita" style="max-width: 100%; height: auto;"></p>
+                <p style="text-align: center;"><img src="../media/row-based-multithread.gif" alt="Noita" style="max-width: 100%; height: auto;" loading="lazy" decoding="async"></p>
                 <p style="text-align: center; font-size: smaller; font-style: italic;">GIF from MARF | <a href="https://www.youtube.com/watch?v=5Ka3tbbT-9E"> How To Code a Falling Sand Simulation (like Noita) with Cellular Automata</a></p>
 
                 <p>
@@ -515,7 +549,7 @@ for (int i = 0; i < _numThreads; i++)
 }</code></pre>
                 <p>After all this hard work, I was finally able to achieve real-time performance with Avalanche while simulating a large number of cells. I quickly ran my stress test demo, which places 50 cells per second going across the screen for 6000 units. And it held up remarkably well, maintaining smooth performance throughout. <br><br>The single threaded version had an average time step of <code>11ms</code> with the .1% lows hitting <code>21ms</code> and the new multithreaded version scored an average time step of <code>4ms!</code> with the .1% lows hitting <code>5ms!</code>. This means that the multithreaded version was able to update the simulation more than twice as fast as the single-threaded version.</p>
                 
-                 <video src="../media/stress-test.mp4" controls loop style="max-width: 100%; height: auto;"></video>
+                 <video src="../media/stress-test.mp4" controls loop preload="metadata" playsinline style="max-width: 100%; height: auto;"></video>
                 <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing horizontal stress test with 50 cells per second for 6000 units. Debug overlay enabled to compare results. Any visual artifacts are caused by the recording software having a different framerate.</p>
                 
                 <h2 id="one-million">Simulating One Million Cells</h2>
@@ -524,7 +558,7 @@ for (int i = 0; i < _numThreads; i++)
                 <p>
                     And yes! I achieved my goal! The simulation remains stable while running way above 60 fps with a max average (.1% lows) time step of <code>~10ms</code>. The combination of double buffering, chunking, a flexible API, and multithreading allowed Avalanche to handle large numbers of particles efficiently while maintaining realistic behavior and user-defined interactions. Running on my Ryzen 5 9600x CPU.
                 </p>
-                <video src="../media/one-million-cells.mp4" controls loop style="max-width: 100%; height: auto;"></video>
+                <video src="../media/one-million-cells.mp4" controls loop preload="metadata" playsinline style="max-width: 100%; height: auto;"></video>
                 <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing one million cells simulated in real-time. Each sector grid holds 250,000 cells. Any visual artifacts are caused by the recording software having a different framerate. It looks all smooth in-person!</p>
 
             </div>
