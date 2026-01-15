@@ -383,10 +383,27 @@ CellMoveFlags flags = CellMoveFlags::MOVE_DOWN | CellMoveFlags::MOVE_SIDE;</code
                     In this example, the <code>UpdateFireSpread</code> function checks if a cell is flammable and has any neighboring cells that are hot (on fire). If so, it increments the cell's lifetime counter. Once the counter reaches a certain threshold, the cell catches fire by plotting a new fire cell at its location. The function also ensures that the relevant chunks and sectors remain active to prevent the fire from going out too quickly. This global update mechanism allows for dynamic interactions between different cell types based on their properties rather than their specific IDs.
                 </p>
 
+                <pre><code class="language-cpp">world->set_cell_post_processor(UpdateFireSpread);</code></pre><br>
+
                 <p>
                     That is how fire is implemented in Avalanche! There are many more cell types and behaviors implemented in the demo project, but I won't go into all of them here. <br><br>Here is a video showcasing the fire spread behavior in action:
                 </p>
+
                 <video src="../media/firespread.mp4" controls loop style="max-width: 100%; height: auto;"></video>
+
+                <h3>Multithreading</h3>
+                <p>
+                    To get even more performance out of the engine, I need to multi-thread the update process. This was quite hard to get right because of the double buffering system. Since the cellMoves buffer is shared between all threads, I needed to make sure that multiple threads could write to it safely without causing race conditions or data corruption. I started doing research to see what other people had done in similar situations in falling sand engines. I watched a GDC talk by Petri Purho called <a href="https://www.youtube.com/watch?v=prXuyMCgbTc"> Exploring the Tech and Design of Noita
+</a> where he talked about how they implemented multithreading in their falling sand engine. 
+                </p>
+
+                <h3>Simulating one million cells</h3>
+                <p>
+                    After implementing all the optimizations and features described earlier in this blog, I was finally able to achieve the goal of simulating one million particles in real-time on a standard CPU. The combination of double buffering, chunking, a flexible API, and multithreading allowed Avalanche to handle large numbers of particles efficiently while maintaining realistic behavior and user-defined interactions. All while running at 60+ FPS on my Ryzen 5 9600x CPU.
+                </p>
+                <video src="../media/one-million-cells.mp4" controls loop style="max-width: 100%; height: auto;"></video>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing one million cells simulated in real-time. Each sector grid holds 250,000 cells The visual artifacts are due being zoomed way out and my recording software having a different framerate. It looks all smooth in-person!</p>
+
             </div>
         </article>
     </div>
