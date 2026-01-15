@@ -25,8 +25,7 @@
             </header>
 
             <div class="blog-post-content">
-                
-                <h2>Introduction</h2>
+                <h2 id="introduction">Introduction</h2>
                 <p>
                     Ever played the game <a href="https://noitagame.com/">Noita?</a> I have, and I love it. In Noita, every pixel on the screen is simulated in the physics engine called <a href="https://nollagames.com/fallingeverything/">the falling everything engine</a>.
                     It is a very impressive falling sand engine and as part of my school assignment, I was inspired to build my own falling sand engine/library.
@@ -42,7 +41,7 @@
 
                 <video src="../media/showcase.mp4" controls loop style="max-width: 100%; height: auto;"></video>
 
-                <h2>Project goals</h2>
+                <h2 id="project-goals">Project goals</h2>
                 <p>
                     It is fun to set goals for personal projects like this. Here are the main objectives I set out to achieve:
                     <ul>
@@ -54,7 +53,24 @@
                     <br>Curious about the implementation details and if I achieved these goals? Keep reading!
                 </p>
 
-                <h2>What is a falling sand simulation?</h2>
+                <h2 style="margin-bottom: 12px;">Table of Contents</h2>
+                <ul style="margin-bottom: 40px; line-height: 1.8;">
+                    <li><a href="#introduction">Introduction</a></li>
+                    <li><a href="#project-goals">Project Goals</a></li>
+                    <li><a href="#falling-sand">What is a Falling Sand Simulation?</a></li>
+                    <li><a href="#naive-approach">The Naive Approach</a></li>
+                    <li><a href="#improving-simulation">Improving the Simulation</a>
+                        <ul style="margin-top: 8px; margin-bottom: 8px;">
+                            <li><a href="#directional-bias">Solving Directional Bias</a></li>
+                            <li><a href="#chunking">Adding a Proper Chunking Framework</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#flexibility-api">Flexibility and API Design</a></li>
+                    <li><a href="#multithreading">Multithreading</a></li>
+                    <li><a href="#one-million">Simulating One Million Cells</a></li>
+                </ul>
+
+                <h2 id="falling-sand">What is a falling sand simulation?</h2>
                 <p>
                     Falling sand simulations are a type of cellular automaton where each cell in a grid represents a particle or empty space. The simulation updates the state of each cell based on predefined rules that dictate how particles interact with each other and their environment. Common behaviors include falling due to gravity, spreading out when they hit the ground, and interacting with other particle types (e.g., water flowing around sand).
                     
@@ -64,7 +80,7 @@
                     That being said, falling sand simulations are deceptively complex. It is relatively easy to set-up a mediocre falling sand sim but there are a lot of considerations to make in order to maintain flexible and performant. You potentially need to update thousands of cells every frame, handle spatial queries efficiently, and in my case I will also ideally need to provide a clean API that doesn't get in the way.
                 </p>
 
-                <h2>The naive approach</h2>
+                <h2 id="naive-approach">The naive approach</h2>
                 <p> 
                     My first attempt was to update every cell sequentially without any chunking or whatnot, this approach had some major issues. There were big performance bottlenecks and arguably more importantly, there was non-deterministic behavior that broke the simulation because of directional biases.
                 </p>
@@ -93,11 +109,11 @@ if (shouldUpdate)
                     Performance was another major concern. Updating every cell in a large grid every frame was computationally expensive, leading to low frame rates and a poor user experience. As the number of particles increased, the performance degraded significantly, making it impractical for real-time applications.
                 </p>
 
-                <h2>Improving the simulation</h2>      
+                <h2 id="improving-simulation">Improving the simulation</h2>      
 
                 <p>To address these issues, I took a step back and re-evaluated my approach.</p>
 
-                <h3>Solving directional bias</h3>
+                <h3 id="directional-bias">Solving directional bias</h3>
                 <p>
                     After researching some other falling sand projects online, I found that most of them used two main ways to address directional bias: double buffering or randomizing the update order.
                 </p>
@@ -161,7 +177,7 @@ Games Now! | <a href="https://www.youtube.com/watch?v=Mr3E_voEG8Y">Nolla Games: 
                     The code snippet above shows how I implemented the commit phase of the double buffering system in Avalanche. During the update phase, each cell's desired move is recorded in the _cellChanges vector as a pair of source and destination indices. In the commit phase, I first sort the _cellChanges vector to group all changes targeting the same destination together. <br><br>Then, I iterate through the sorted changes, and for each unique destination, I randomly select one of the source cells that want to move there. This randomness helps to further reduce any residual bias that might occur when multiple cells target the same destination. The selected cell's information is then applied to the destination, and the source cell is cleared. Finally, I clear the _cellSwaps and _cellChanges vectors to prepare for the next update cycle.
                 </p>
 
-                 <h3>Adding a proper chunking framework</h3>
+                 <h3 id="chunking">Adding a proper chunking framework</h3>
                  <p>It is very wasteful to loop over all cells in a sector every frame, especially when many of them are inactive. To optimize this, I implemented a chunking system where the sector (a single grid of 500x500 cells) is divided into smaller chunks of 50x50 cells. Only active chunks are processed each frame, significantly reducing the number of cells that need to be checked. Chunks themselves don't know anything about how many cell they contain or what type of cells they are. Chunks are just containers that can be active or asleep. This significantly reduced the number of checks I needed to do per frame and improved overall performance.</p>
                  
                 <pre><code class="language-cpp">for (int i = 0; i &lt; activeChunks.size(); i++)
@@ -185,7 +201,7 @@ Games Now! | <a href="https://www.youtube.com/watch?v=Mr3E_voEG8Y">Nolla Games: 
                 <video src="../media/chunking.mp4" controls loop style="max-width: 100%; height: auto;"></video>
                 <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing double buffering and chunking implementation. Notice there is no directional bias anymore.</p>
 
-                 <h2>Flexibility and API Design</h2>
+                 <h2 id="flexibility-api">Flexibility and API Design</h2>
                 <p>
                     One of the project goals was to provide a clean and flexible API that allows users to define custom cell types and behaviors easily. This had me stumped for a while. Initially, I had one enum that defined all known cell moves and behaviors, but this quickly became unmanageable as I added more cell types and more importantly, users couldn't define their own cell types without modifying the engine code itself. This is bad because an engine like this should not make any assumptions about what kind of cells the user wants to simulate.
                 </p>
@@ -391,18 +407,125 @@ CellMoveFlags flags = CellMoveFlags::MOVE_DOWN | CellMoveFlags::MOVE_SIDE;</code
 
                 <video src="../media/firespread.mp4" controls loop style="max-width: 100%; height: auto;"></video>
 
-                <h3>Multithreading</h3>
+                <h2 id="multithreading">Multithreading</h2>
                 <p>
                     To get even more performance out of the engine, I need to multi-thread the update process. This was quite hard to get right because of the double buffering system. Since the cellMoves buffer is shared between all threads, I needed to make sure that multiple threads could write to it safely without causing race conditions or data corruption. I started doing research to see what other people had done in similar situations in falling sand engines. I watched a GDC talk by Petri Purho called <a href="https://www.youtube.com/watch?v=prXuyMCgbTc"> Exploring the Tech and Design of Noita
 </a> where he talked about how they implemented multithreading in their falling sand engine. 
                 </p>
 
-                <h3>Simulating one million cells</h3>
+                <h4>1. Checkerboard updating pattern</h4>
+                <p style="text-align: center;"><img src="../media/noita-multithread.gif" alt="Noita" style="max-width: 100%; height: auto;"></p>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">GIF from GDC Festival of Gaming | <a href="https://www.youtube.com/watch?v=prXuyMCgbTc"> Exploring the Tech and Design of Noita</a></p>
+
                 <p>
-                    After implementing all the optimizations and features described earlier in this blog, I was finally able to achieve the goal of simulating one million particles in real-time on a standard CPU. The combination of double buffering, chunking, a flexible API, and multithreading allowed Avalanche to handle large numbers of particles efficiently while maintaining realistic behavior and user-defined interactions. All while running at 60+ FPS on my Ryzen 5 9600x CPU.
+                    In this approach, the simulation grid is divided into a checkerboard pattern, where cells are grouped into two sets based on their coordinates (even and odd). During each update cycle, one set of cells is processed while the other set remains static. This allows for safe parallel processing since cells in one set do not directly interact with cells in the other set during the same update. By alternating between the two sets in subsequent updates, the entire grid can be updated over time without introducing race conditions. This is the method used in Noita's falling everything engine as shown in the GIF above.
+                </p>
+
+                <h4>2. Row-based updating pattern</h4>
+                <p style="text-align: center;"><img src="../media/row-based-multithread.gif" alt="Noita" style="max-width: 100%; height: auto;"></p>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">GIF from MARF | <a href="https://www.youtube.com/watch?v=5Ka3tbbT-9E"> How To Code a Falling Sand Simulation (like Noita) with Cellular Automata</a></p>
+
+                <p>
+                    This is another similar approach where the simulation grid is divided into horizontal rows. During each update cycle, rows are processed in parallel, with each thread handling a separate row. To prevent race conditions, the update order is staggered such that adjacent rows are not processed simultaneously. For example, in one update cycle, even-numbered rows are processed first, followed by odd-numbered rows in the next cycle. This ensures that cells in one row do not directly interact with cells in adjacent rows during the same update, allowing for safe parallel processing. This method is illustrated in the GIF above.
+                </p>
+                
+                <p>
+                    After considering both options, I decided to implement the checkerboard updating pattern in my project. I felt that it would provide a more robust solution to the multithreading issue while also allowing for greater control over the simulation's behavior and since I already have a proper chunking framework in place, it was relatively easy to implement.
+                </p>
+
+<pre><code class="language-cpp">void SimulationSector::_update()
+{
+	std::vector<SectorSimulationChunk*> oddChunks;
+	std::vector<SectorSimulationChunk*> evenChunks;
+
+	for (int i = 0; i < _allChunks.size(); i++)  // Fill odd and even chunk buffers.
+	{
+		if (!_allChunks[i]->isSleeping)
+		{
+			SectorSimulationChunk* chunk = _allChunks[i];
+
+			int chunkIndexX = chunk->chunkX / 50;
+			int chunkIndexY = chunk->chunkY / 50;
+
+			if ((chunkIndexX + chunkIndexY) % 2 == 0)
+				evenChunks.push_back(chunk);
+			else
+				oddChunks.push_back(chunk);
+		}
+	}
+
+	// Only use multiple threads if there are enough chunks to make it worthwhile.
+	static const int MIN_CHUNKS_FOR_THREADING = 4;
+
+    // Begin processing odd chunks, only process in parallel if there are enough chunks.
+	if (oddChunks.size() >= MIN_CHUNKS_FOR_THREADING)
+	{
+		_process_chunks(oddChunks);
+		_commit_cells();
+	}
+	else if (!oddChunks.empty())
+	{
+		_process_chunks_sigle_threaded(oddChunks);
+		_commit_cells();
+	}
+
+    // Begin processing even chunks, only process in parallel if there are enough chunks.
+    if (evenChunks.size() >= MIN_CHUNKS_FOR_THREADING)
+    {
+	    _process_chunks(evenChunks);
+	    _commit_cells();
+    }
+    else if (!evenChunks.empty())
+    {
+	    _process_chunks_sigle_threaded(evenChunks);
+	    _commit_cells();
+    }
+}</code></pre>
+
+                <p>
+                    One thing that I wanted to avoid was having to lock the cellMoves buffer during the update process using mutexes. Locking can introduce significant overhead and negate the benefits of multithreading, especially in a performance-critical application like a falling sand engine. To avoid this, I decided to allocate separate cellMoves buffers for each thread. This way, each thread can write to its own buffer without needing to lock anything, allowing for safe and efficient parallel processing. After all threads have completed their updates, the individual buffers are merged into the main cellMoves buffer in a single-threaded commit phase. This approach maximizes performance while still ensuring that all cell updates are applied correctly.
+                </p>
+
+                <pre><code class="language-cpp">std::vector&lt;std::vector&lt;std::pair&lt;int, int&gt;&gt;&gt; _threadCellChanges;</code></pre>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Each thread can use its own buffer to record cell changes, avoiding the need for mutex locks during parallel processing.</p>
+
+                <p>
+                    When a thread wants to record a cell change, it simply appends the change to its own buffer. During the commit phase, all thread-specific buffers are merged into the main cellMoves buffer in a single-threaded context, ensuring that all changes are applied correctly without any race conditions.
+                </p>
+                <pre><code class="language-cpp">// Merge cell changes.
+for (int i = 0; i < _numThreads; i++)
+{
+	if (!_threadCellChanges[i].empty())
+	{
+		_cellChanges.insert(_cellChanges.end(),
+			std::make_move_iterator(_threadCellChanges[i].begin()),
+			std::make_move_iterator(_threadCellChanges[i].end()));
+	}
+}
+
+// Merge cell swaps.
+for (int i = 0; i < _numThreads; i++)
+{
+	if (!_threadCellSwaps[i].empty())
+	{
+		_cellSwaps.insert(_cellSwaps.end(),
+			std::make_move_iterator(_threadCellSwaps[i].begin()),
+			std::make_move_iterator(_threadCellSwaps[i].end()));
+	}
+}</code></pre>
+                <p>After all this hard work, I was finally able to achieve real-time performance with Avalanche while simulating a large number of cells. I quickly ran my stress test demo, which places 50 cells per second going across the screen for 6000 units. And it held up remarkably well, maintaining smooth performance throughout. <br><br>The single threaded version had an average time step of <code>11ms</code> with the .1% lows hitting <code>21ms</code> and the new multithreaded version scored an average time step of <code>4ms!</code> with the .1% lows hitting <code>5ms!</code>. This means that the multithreaded version was able to update the simulation more than twice as fast as the single-threaded version.</p>
+                
+                 <video src="../media/stress-test.mp4" controls loop style="max-width: 100%; height: auto;"></video>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing horizontal stress test with 50 cells per second for 6000 units. Debug overlay enabled to compare results. Any visual artifacts are caused by the recording software having a different framerate.</p>
+                
+                <h2 id="one-million">Simulating One Million Cells</h2>
+                <p>I am very happy with these results but now there was only one last thing to do. To see if I hit my initial goal of simulating one million cells...</p>
+
+                <p>
+                    And yes! I achieved my goal! The simulation remains stable while running way above 60 fps with a max average (.1% lows) time step of <code>~10ms</code>. The combination of double buffering, chunking, a flexible API, and multithreading allowed Avalanche to handle large numbers of particles efficiently while maintaining realistic behavior and user-defined interactions. Running on my Ryzen 5 9600x CPU.
                 </p>
                 <video src="../media/one-million-cells.mp4" controls loop style="max-width: 100%; height: auto;"></video>
-                <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing one million cells simulated in real-time. Each sector grid holds 250,000 cells The visual artifacts are due being zoomed way out and my recording software having a different framerate. It looks all smooth in-person!</p>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing one million cells simulated in real-time. Each sector grid holds 250,000 cells. Any visual artifacts are caused by the recording software having a different framerate. It looks all smooth in-person!</p>
 
             </div>
         </article>
