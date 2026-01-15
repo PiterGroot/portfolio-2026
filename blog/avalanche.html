@@ -103,6 +103,7 @@
                     <li><a href="#flexibility-api">Flexibility and API Design</a></li>
                     <li><a href="#multithreading">Multithreading</a></li>
                     <li><a href="#one-million">Simulating One Million Cells</a></li>
+                    <li><a href="#references">References</a></li>
                 </ul>
 
                 <h2 id="falling-sand">What is a falling sand simulation?</h2>
@@ -110,7 +111,7 @@
                     Falling sand simulations are a type of cellular automaton where each cell in a grid represents a particle or empty space. The simulation updates the state of each cell based on predefined rules that dictate how particles interact with each other and their environment. Common behaviors include falling due to gravity, spreading out when they hit the ground, and interacting with other particle types (e.g., water flowing around sand).
                     
                     <p style="text-align: center;"><img src="../media/sand_simulation.gif" alt="Noita" style="max-width: 100%; height: auto;" loading="lazy" decoding="async"></p>
-                    <p style="text-align: center; font-size: smaller; font-style: italic;">GIF by John Jackson | <a href="https://noitagame.com/">Recreating Noita's Sand Simulation in C and OpenGL | Game Engineering</a></p>
+                    <p style="text-align: center; font-size: smaller; font-style: italic;">GIF by John Jackson | <a href="https://www.youtube.com/watch?v=VLZjd_Y1gJ8">Recreating Noita's Sand Simulation in C and OpenGL | Game Engineering</a></p>
                     
                     That being said, falling sand simulations are deceptively complex. It is relatively easy to set-up a mediocre falling sand sim but there are a lot of considerations to make in order to maintain flexible and performant. You potentially need to update thousands of cells every frame, handle spatial queries efficiently, and in my case I will also ideally need to provide a clean API that doesn't get in the way.
                 </p>
@@ -296,7 +297,7 @@ CellMoveFlags flags = CellMoveFlags::MOVE_DOWN | CellMoveFlags::MOVE_SIDE;</code
                 </p>
 
                 <p>
-                    This works great for simple behaviors like sand and water, but more complex behaviors require the use of the user data field that is associated with each cell. This field can store arbitrary <code>uint32_t</code> data defined by the user, allowing for more complex state management within cell update functions. For example, here is the fire update function which I shoved above that uses the user data system:
+                    This works great for simple behaviors like sand and water, but more complex behaviors require the use of the user data field that is associated with each cell. This field can store arbitrary <code>uint32_t</code> data defined by the user, allowing for more complex state management within cell update functions. For example, here is the fire update function which I showed above that uses the user data system:
                 </p>
 
 
@@ -548,6 +549,30 @@ for (int i = 0; i < _numThreads; i++)
 			std::make_move_iterator(_threadCellSwaps[i].end()));
 	}
 }</code></pre>
+                <p>
+                    To actually create and manage threads, I use OpenMP which makes it really easy to parallelize loops with minimal code changes and I don't need to manage thread lifetimes myself. Here is how I process chunks in parallel using OpenMP:
+                </p>
+
+                <pre><code class="language-cpp">	void SimulationSector::_process_chunks(std::vector<SectorSimulationChunk*>& chunks)
+	{
+		for (int i = 0; i < _numThreads; i++)
+		{
+			_threadCellChanges[i].clear();
+			_threadCellSwaps[i].clear();
+		}
+
+#pragma omp parallel for schedule(static)
+		for (int i = 0; i < chunks.size(); i++)
+		{
+#ifdef _OPENMP
+			int threadId = omp_get_thread_num();
+#else
+			int threadId = 0;
+#endif
+            // Process each chunk here in a checkerboard pattern.
+        }
+    }</code></pre>
+
                 <p>After all this hard work, I was finally able to achieve real-time performance with Avalanche while simulating a large number of cells. I quickly ran my stress test demo, which places 50 cells per second going across the screen for 6000 units. And it held up remarkably well, maintaining smooth performance throughout. <br><br>The single threaded version had an average time step of <code>11ms</code> with the .1% lows hitting <code>21ms</code> and the new multithreaded version scored an average time step of <code>4ms!</code> with the .1% lows hitting <code>5ms!</code>. This means that the multithreaded version was able to update the simulation more than twice as fast as the single-threaded version.</p>
                 
                  <video src="../media/stress-test.mp4" controls loop preload="metadata" playsinline style="max-width: 100%; height: auto;"></video>
@@ -561,6 +586,27 @@ for (int i = 0; i < _numThreads; i++)
                 </p>
                 <video src="../media/one-million-cells.mp4" controls loop preload="metadata" playsinline style="max-width: 100%; height: auto;"></video>
                 <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing one million cells simulated in real-time. Each sector grid holds 250,000 cells. Any visual artifacts are caused by the recording software having a different framerate. It looks all smooth in-person!</p>
+
+                <h2 id="conclusion">Conclusion</h2>
+                <p>
+                    Building Avalanche has been an incredible learning experience. I gained a deeper understanding of cellular automata, performance optimization, and multithreading techniques. The challenges I faced along the way pushed me to think creatively and find innovative solutions to complex problems. I am proud of what I have accomplished with Avalanche and excited about the possibilities it opens up for future projects. Whether you're a game developer, a math geek, or just curious about how falling sand simulations work, I hope this blog post was enjoyable to read and has provided valuable insights into the design and implementation of such systems.
+                </p>
+
+                <h2 id="references">References</h2>
+                <p>
+                    This blog post and the Avalanche engine were inspired by and built upon the following resources and projects:
+                </p>
+                <ul>
+                    <li><strong>Noita</strong> by Nolla Games - A pixel-based action roguelike that inspired the falling sand engine concept. Visit <a href="https://noitagame.com/">noitagame.com</a> and read about <a href="https://nollagames.com/fallingeverything/">the falling everything engine</a>.</li>
+                    <li><strong>"Exploring the Tech and Design of Noita"</strong> - GDC talk by Petri Purho discussing multithreading approaches in falling sand simulations. Watch on <a href="https://www.youtube.com/watch?v=prXuyMCgbTc">YouTube</a>.</li>
+                    <li><strong>"Recreating Noita's Sand Simulation in C and OpenGL | Game Engineering"</strong> - Educational resource by John Jackson explaining sand simulation fundamentals. Available at <a href="https://noitagame.com/">noitagame.com</a>.</li>
+                    <li><strong>"How To Code a Falling Sand Simulation (like Noita) with Cellular Automata"</strong> - Tutorial by MARF covering row-based multithreading patterns. Watch on <a href="https://www.youtube.com/watch?v=5Ka3tbbT-9E">YouTube</a>.</li>
+                    <li><strong>Winter Dev's Falling Sand Project</strong> - An inspiring falling sand implementation that influenced the design decisions in this project. Visit <a href="https://winter.dev/articles/falling-sand">winter.dev/articles/falling-sand</a>.</li>
+                    <li><strong>OpenMP Documentation cheat sheet</strong> - Official OpenMP documentation providing insights into parallel programming techniques. Available at <a href="https://www.openmp.org/wp-content/uploads/OpenMP-API-Specification-5.0.pdf">openmp.org</a> And the c/c++ cheat sheet <a href="https://www.openmp.org/wp-content/uploads/OpenMP3.1-CCard.pdf">here</a>.</li>
+                </ul>
+                <p>
+                    These resources provided invaluable insights into performance optimization, API design, and simulation techniques that shaped the development of this project.
+                </p>
 
             </div>
         </article>
