@@ -60,6 +60,16 @@
             </header>
 
             <div class="blog-post-content">
+                <h2>Building a Lock-Free Falling Sand Engine</h2>
+
+                <p>
+                    Falling sand simulations look simple, just pixels falling down, right? 
+                    Behind that simplicity lies a fascinating intersection of cellular automata, 
+                    multithreading challenges, and performance tricks and engineering. This is the story of 
+                    how I built Avalanche, a production-ready physics engine that simulates 
+                    one million particles at 60fps on a CPU.
+                </p>
+
                 <h2 id="introduction">Introduction</h2>
                 <p>
                     Ever played the game <a href="https://noitagame.com/">Noita?</a> I have, and I love it. In Noita, every pixel on the screen is simulated in the physics engine called <a href="https://nollagames.com/fallingeverything/">the falling everything engine</a>.
@@ -101,6 +111,7 @@
                     <li><a href="#improving-simulation">Improving the Simulation</a>
                         <ul style="margin-top: 8px; margin-bottom: 8px;">
                             <li><a href="#directional-bias">Solving Directional Bias</a></li>
+                            <li><a href="#why-double-buffering">Why Double Buffering?</a></li>
                             <li><a href="#chunking">Adding a Proper Chunking Framework</a></li>
                         </ul>
                     </li>
@@ -178,8 +189,35 @@ Games Now! | <a href="https://www.youtube.com/watch?v=Mr3E_voEG8Y">Nolla Games: 
                 </p>
 
                 <p>
-                    After carefully considering both options, I decided to implement the double buffering approach in Avalanche. I felt that it would provide a more robust solution to the directional bias issue while also allowing for greater control over the simulation's behavior and the other option feels more like a band aid solution that is not actually tackling the problem at hand.
+                    After carefully considering both options, I decided to implement the double buffering approach in Avalanche. 
                 </p>
+
+                <h3 id="why-double-buffering">Why Double Buffering?</h3>
+
+                <p>I felt that it would provide a more robust solution to the directional bias issue while also allowing for greater control over the simulation's behavior and the other option feels more like a band aid solution that is not actually tackling the problem at hand.</p>
+
+                <p>
+                    Specifically, the key factor of me choosing double buffering is that immediate updates create a dependencies:
+                </p>
+
+                <p>Without double buffering:</p>
+                <pre><code>
+                Frame N:
+                Cell A updates → moves down
+                Cell B sees A's NEW position → reacts differently
+                Cell C sees both NEW positions → cascade continues
+                </code></pre>
+
+                <p>This creates update-order sensitivity. With double buffering:</p>
+                <pre><code>
+                Frame N:
+                Cell A plans to move down (writes to buffer)
+                Cell B sees A's OLD position (reads from grid)
+                Cell C sees OLD positions (reads from grid)
+                Then: Apply all moves atomically
+                </code></pre>
+
+                <p>All cells base decisions on the SAME world state, eliminating bias.</p>
 
                 <pre><code class="language-cpp">void SimulationSector::_commit_cells()
 {
