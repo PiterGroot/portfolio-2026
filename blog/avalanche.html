@@ -5,19 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Avalanche Engine – C++ Falling Sand Simulation</title>
-    <meta name="description" content="Avalanche is a single-header C++ falling sand engine that simulates one million cells in real time using double buffering, chunking, and multithreading.">
+    <meta name="description"
+        content="Avalanche is a single-header C++ falling sand engine that simulates one million cells in real time using double buffering, chunking, and multithreading.">
     <link rel="canonical" href="https://pitergroot.github.io/portfolio-2026/blog/avalanche.html">
 
     <meta property="og:type" content="article">
     <meta property="og:title" content="Avalanche Engine – C++ Falling Sand Simulation">
-    <meta property="og:description" content="Avalanche is a single-header C++ falling sand engine that simulates one million cells in real time using double buffering, chunking, and multithreading.">
+    <meta property="og:description"
+        content="Avalanche is a single-header C++ falling sand engine that simulates one million cells in real time using double buffering, chunking, and multithreading.">
     <meta property="og:url" content="https://pitergroot.github.io/portfolio-2026/blog/avalanche.html">
-    <meta property="og:image" content="https://pitergroot.github.io/portfolio-2026/media/logo.png">
+    <meta property="og:image" content="https://pitergroot.github.io/portfolio-2026/media/avalanche/logo.png">
 
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Avalanche Engine – C++ Falling Sand Simulation">
-    <meta name="twitter:description" content="Avalanche is a single-header C++ falling sand engine that simulates one million cells in real time using double buffering, chunking, and multithreading.">
-    <meta name="twitter:image" content="https://pitergroot.github.io/portfolio-2026/media/logo.png">
+    <meta name="twitter:description"
+        content="Avalanche is a single-header C++ falling sand engine that simulates one million cells in real time using double buffering, chunking, and multithreading.">
+    <meta name="twitter:image" content="https://pitergroot.github.io/portfolio-2026/media/avalanche/logo.png">
 
     <link rel="stylesheet" href="../style/styles.css">
     <link rel="stylesheet" href="../style/blog-style.css">
@@ -35,7 +38,7 @@
         "@type": "Person",
         "name": "Piter Groot"
       },
-      "image": "https://pitergroot.github.io/portfolio-2026/media/logo.png",
+      "image": "https://pitergroot.github.io/portfolio-2026/media/avalanche/logo.png",
       "mainEntityOfPage": {
         "@type": "WebPage",
         "@id": "https://pitergroot.github.io/portfolio-2026/blog/avalanche.html"
@@ -52,7 +55,9 @@
 
         <article>
             <header class="blog-post-header">
-                <p style="text-align: center;"><img src="../media/logo.png" alt="Avalanche Engine Logo" style="max-width: 100%; width: 600px; height: auto; margin: 30px 0;" loading="lazy" decoding="async"></p>
+                <p style="text-align: center;"><img src="../media/avalanche/logo.png" alt="Avalanche Engine Logo"
+                        style="max-width: 100%; width: 600px; height: auto; margin: 30px 0;" loading="lazy"
+                        decoding="async"></p>
                 <h1 class="blog-post-title">Building Avalanche: A C++ Falling Sand Engine</h1>
                 <p style="text-align: center;">Simulating one million falling sand cells on the CPU.</p>
 
@@ -60,47 +65,16 @@
             </header>
 
             <div class="blog-post-content">
-                <h2>Building a Lock-Free Falling Sand Engine</h2>
+
+                <h2>Building a Falling Sand Engine</h2>
 
                 <p>
-                    Falling sand simulations look simple, just pixels falling down, right? 
-                    Behind that simplicity lies a fascinating intersection of cellular automata, 
-                    multithreading challenges, and performance tricks and engineering. This is the story of 
-                    how I built Avalanche, a production-ready physics engine that simulates 
+                    Falling sand simulations look simple, just pixels falling down, right?
+                    Behind that simplicity lies a fascinating intersection of cellular automata,
+                    multithreading challenges, and performance tricks and engineering. This is the story of
+                    how I built Avalanche, a production-ready physics engine that simulates
                     one million particles at 60fps on a CPU.
                 </p>
-
-                <h2 id="introduction">Introduction</h2>
-                <p>
-                    Ever played the game <a href="https://noitagame.com/">Noita?</a> I have, and I love it. In Noita, every pixel on the screen is simulated in the physics engine called <a href="https://nollagames.com/fallingeverything/">the falling everything engine</a>.
-                    It is a very impressive falling sand engine and as part of my school assignment, I was inspired to build my own falling sand engine/library.
-                </p>
-                 
-                <p style="text-align: center;"><img src="../media/noita.gif" alt="Noita" style="max-width: 100%; height: auto;" loading="lazy" decoding="async"></p>
-
-                <p> 
-                    That's how I started working on Avalanche, a production-ready falling sand physics engine designed as a single-header C++ library. The goal was to create a fast, flexible system to simulate thousands of cells on the CPU that developers can integrate into their projects with minimal friction. In Avalanche, all cell behavior is user defined via a clean API, allowing for easy extension and in-depth customization. 
-                    
-                    <br><br>Here is a video showcasing some of the behaviors that can be simulated using the API.
-                </p>
-
-                <video src="../media/showcase.mp4" controls loop preload="metadata" playsinline style="max-width: 100%; height: auto;"></video>
-                <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing all cells implemented in the demo project. All cells are user defined and being simulated in real-time.</a></p>
-
-                <h2 id="project-goals">Personal project goals</h2>
-                <p>
-                    It is fun to set goals for personal projects like this. Here are the main objectives I set out to achieve:
-                    <ul>
-                        <li><strong>Performance:</strong> The engine should be capable of simulating one million cells in real-time on my CPU (Ryzen 5 9600x, 3.90 GHz, 6 cores, 12 threads).</li>
-                        <li><strong>Flexibility:</strong> Users should be able to define custom cell types and behaviors easily through a clean API.</li>
-                        <li><strong>Ease of Integration:</strong> The engine should be designed as a single-header C++ library for easy integration into existing projects.</li>
-                        <li><strong>Determinism:</strong> The simulation should produce consistent results across runs given the same initial conditions.</li>
-                        <li><strong>Concurrency:</strong> Getting more familiar with multithreading by parallelizing the simulation lock-free to improve performance.</li>
-                    </ul>
-                </p>
-                <p style="font-style: italic;"><strong>Important note:</strong> This blog focuses specifically on a CPU-based falling sand engine, a GPU-based approach would be a whole different beast and require different techniques and optimizations.</p>
-                    
-                <p>Curious about the implementation details and if I achieved these goals? Keep reading! </p>
 
                 <h2 style="margin-bottom: 12px;">Table of Contents</h2>
                 <ul style="margin-bottom: 40px; line-height: 1.8;">
@@ -122,23 +96,91 @@
                     <li><a href="#references">References</a></li>
                 </ul>
 
+                <h2 id="introduction">Introduction</h2>
+                <p>
+                    Ever played the game <a href="https://noitagame.com/">Noita?</a> I have, and I love it. In Noita,
+                    every pixel on the screen is simulated in the physics engine called <a
+                        href="https://nollagames.com/fallingeverything/">the falling everything engine</a>.
+                    It is a very impressive falling sand engine and as part of my school assignment, I was inspired to
+                    build my own falling sand engine/library.
+                </p>
+
+                <p style="text-align: center;"><img src="../media/avalanche/noita.gif" alt="Noita"
+                        style="max-width: 100%; height: auto;" loading="lazy" decoding="async"></p>
+
+                <p>
+                    That's how I started working on Avalanche, a production-ready falling sand physics engine designed
+                    as a single-header C++ library. The goal was to create a fast, flexible system to simulate thousands
+                    of cells on the CPU that developers can integrate into their projects with minimal friction. In
+                    Avalanche, all cell behavior is user defined via a clean API, allowing for easy extension and
+                    in-depth customization.
+
+                    <br><br>Here is a video showcasing some of the behaviors that can be simulated using the API.
+                </p>
+
+                <video src="../media/avalanche/showcase.mp4" controls loop preload="metadata" playsinline
+                    style="max-width: 100%; height: auto;"></video>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing all cells
+                    implemented in the demo project. All cells are user defined and being simulated in real-time.</a>
+                </p>
+
+                <h2 id="project-goals">Personal project goals</h2>
+                <p>
+                    It is fun to set goals for personal projects like this. Here are the main objectives I set out to
+                    achieve:
+                <ul>
+                    <li><strong>Performance:</strong> The engine should be capable of simulating one million cells in
+                        real-time on my CPU (Ryzen 5 9600x, 3.90 GHz, 6 cores, 12 threads).</li>
+                    <li><strong>Flexibility:</strong> Users should be able to define custom cell types and behaviors
+                        easily through a clean API.</li>
+                    <li><strong>Ease of Integration:</strong> The engine should be designed as a single-header C++
+                        library for easy integration into existing projects.</li>
+                    <li><strong>Determinism:</strong> The simulation should produce consistent results across runs given
+                        the same initial conditions.</li>
+                    <li><strong>Concurrency:</strong> Getting more familiar with multithreading by parallelizing the
+                        simulation lock-free to improve performance.</li>
+                </ul>
+                </p>
+                <p style="font-style: italic;"><strong>Important note:</strong> This blog focuses specifically on a
+                    CPU-based falling sand engine, a GPU-based approach would be a whole different beast and require
+                    different techniques and optimizations.</p>
+
+                <p>Curious about the implementation details and if I achieved these goals? Keep reading! </p>
+
                 <h2 id="falling-sand">What is a falling sand simulation?</h2>
                 <p>
-                    Falling sand simulations are a type of cellular automaton where each cell in a grid represents a cell or empty space. The simulation updates the state of each cell based on predefined rules that dictate how cells interact with each other and their environment. Common behaviors include falling due to gravity, spreading out when they hit the ground, and interacting with other cell types (e.g., water flowing around sand).
-                    
-                    <p style="text-align: center;"><img src="../media/sand_simulation.gif" alt="Noita" style="max-width: 100%; height: auto;" loading="lazy" decoding="async"></p>
-                    <p style="text-align: center; font-size: smaller; font-style: italic;">GIF by John Jackson | <a href="https://www.youtube.com/watch?v=VLZjd_Y1gJ8">Recreating Noita's Sand Simulation in C and OpenGL | Game Engineering</a></p>
-                    
-                    That being said, falling sand simulations are deceptively complex. It is relatively easy to set-up a mediocre falling sand sim but there are a lot of considerations to make in order to maintain flexible and performant. You potentially need to update thousands of cells every frame, handle spatial queries efficiently, and in my case I will also ideally need to provide a clean API that doesn't get in the way. <br><br>In this blog post I hope to shed some light on the challenges I faced while building Avalanche and how I overcame them.
+                    Falling sand simulations are a type of cellular automaton where each cell in a grid represents a
+                    cell or empty space. The simulation updates the state of each cell based on predefined rules that
+                    dictate how cells interact with each other and their environment. Common behaviors include falling
+                    due to gravity, spreading out when they hit the ground, and interacting with other cell types (e.g.,
+                    water flowing around sand).
+
+                <p style="text-align: center;"><img src="../media/avalanche/sand_simulation.gif" alt="Noita"
+                        style="max-width: 100%; height: auto;" loading="lazy" decoding="async"></p>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">GIF by John Jackson | <a
+                        href="https://www.youtube.com/watch?v=VLZjd_Y1gJ8">Recreating Noita's Sand Simulation in C and
+                        OpenGL | Game Engineering</a></p>
+
+                That being said, falling sand simulations are deceptively complex. It is relatively easy to set-up a
+                mediocre falling sand sim but there are a lot of considerations to make in order to maintain flexible
+                and performant. You potentially need to update thousands of cells every frame, handle spatial queries
+                efficiently, and in my case I will also ideally need to provide a clean API that doesn't get in the way.
+                <br><br>In this blog post I hope to shed some light on the challenges I faced while building Avalanche
+                and how I overcame them.
                 </p>
 
                 <h2 id="naive-approach">The naive approach</h2>
-                <p> 
-                    My first attempt was to update every cell sequentially without any chunking or whatnot, this approach had some major issues. There were big performance bottlenecks for one but also (arguably more important) there was non-deterministic behavior that broke the simulation because of directional biases.
+                <p>
+                    My first attempt was to update every cell sequentially without any chunking or whatnot, this
+                    approach had some major issues. There were big performance bottlenecks for one but also (arguably
+                    more important) there was non-deterministic behavior that broke the simulation because of
+                    directional biases.
                 </p>
 
-                <video src="../media/left-bias.mp4" controls loop preload="metadata" playsinline style="max-width: 100%; height: auto;"></video>
-                <p style="text-align: center; font-size: smaller; font-style: italic;">Intense left-bias in first iteration of the simulation.</p>
+                <video src="../media/avalanche/left-bias.mp4" controls loop preload="metadata" playsinline
+                    style="max-width: 100%; height: auto;"></video>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Intense left-bias in first
+                    iteration of the simulation.</p>
 
                 <pre><code class="language-cpp">
 if (shouldUpdate)
@@ -152,52 +194,80 @@ if (shouldUpdate)
     }
 }
                 </code></pre>
-                <p style="text-align: center; font-size: smaller; font-style: italic;">First iteration of the simulation update loop.</p>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">First iteration of the simulation
+                    update loop.</p>
 
                 <p>
-                    The directional bias issue arose because I was updating cells in a fixed order (top to bottom, left to right). This meant that cells processed earlier in the update cycle had an advantage over those processed later, leading to unrealistic behavior. In this case, cells would consistently fall to the left side of the screen because they were updated before those on the right. This was really evident in the first iteration of Avalanche as you can see in the GIF above.
+                    The directional bias issue arose because I was updating cells in a fixed order (top to bottom, left
+                    to right). This meant that cells processed earlier in the update cycle had an advantage over those
+                    processed later, leading to unrealistic behavior. In this case, cells would consistently fall to the
+                    left side of the screen because they were updated before those on the right. This was really evident
+                    in the first iteration of Avalanche as you can see in the GIF above.
                 </p>
 
                 <p>
-                    Performance was another major concern. Updating every cell in a large grid every frame was computationally expensive, leading to low extreme frame rates. As the number of cells increased, the performance degraded significantly, making it impractical for real-time applications.
+                    Performance was another major concern. Updating every cell in a large grid every frame was
+                    computationally expensive, leading to low extreme frame rates. As the number of cells increased, the
+                    performance degraded significantly, making it impractical for real-time applications.
                 </p>
 
-                <h2 id="improving-simulation">Improving the simulation</h2>      
+                <h2 id="improving-simulation">Improving the simulation</h2>
 
                 <p>To address these issues, I took a step back and re-evaluated my approach.</p>
 
                 <h3 id="directional-bias">Solving directional bias</h3>
                 <p>
-                    After researching some other falling sand projects online, I found that most of them used two main ways to address directional bias: double buffering or randomizing the update order.
+                    After researching some other falling sand projects online, I found that most of them used two main
+                    ways to address directional bias: double buffering or randomizing the update order.
                 </p>
 
-                
+
                 <h4>1. Randomizing the update direction order</h4>
-                 <p style="text-align: center;"><img src="../media/randomized-update-order.gif" alt="Noita" style="max-width: 100%; height: auto;" loading="lazy" decoding="async"></p>
-                    <p style="text-align: center; font-size: smaller; font-style: italic;">GIF from 
-Games Now! | <a href="https://www.youtube.com/watch?v=Mr3E_voEG8Y">Nolla Games: Making of Noita</a></p>
-                
+                <p style="text-align: center;"><img src="../media/avalanche/randomized-update-order.gif" alt="Noita"
+                        style="max-width: 100%; height: auto;" loading="lazy" decoding="async"></p>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">GIF from
+                    Games Now! | <a href="https://www.youtube.com/watch?v=Mr3E_voEG8Y">Nolla Games: Making of Noita</a>
+                </p>
+
                 <p>
-                    This solution involves shuffling the order in which cells are updated each frame and processing cells one by one one immediately as they are updated. By randomizing the update sequence, no single direction consistently gets priority, leading to a more balanced and realistic simulation. This method is relatively simple to implement and can significantly reduce directional bias. However, it may introduce some variability in the simulation results because the cells are immediately processed before taking all other cells a fair chance, which might not be desirable in all scenarios. This solution is actually used in Noita's falling everything engine as shown in the GIF above, which I was surprised to learn because of the simplicity of this solution.
+                    This solution involves shuffling the order in which cells are updated each frame and processing
+                    cells one by one one immediately as they are updated. By randomizing the update sequence, no single
+                    direction consistently gets priority, leading to a more balanced and realistic simulation. This
+                    method is relatively simple to implement and can significantly reduce directional bias. However, it
+                    may introduce some variability in the simulation results because the cells are immediately processed
+                    before taking all other cells a fair chance, which might not be desirable in all scenarios. This
+                    solution is actually used in Noita's falling everything engine as shown in the GIF above, which I
+                    was surprised to learn because of the simplicity of this solution.
                 </p>
 
                 <h4>2. Double buffering</h4>
-                <video src="../media/double-buffer.mp4" controls loop preload="metadata" playsinline style="max-width: 100%; height: auto;"></video>
+                <video src="../media/avalanche/double-buffer.mp4" controls loop preload="metadata" playsinline
+                    style="max-width: 100%; height: auto;"></video>
 
                 <p>
-                    This solution involves keeping track of a "desired" moves buffer in addition to the main simulation grid. During each update cycle, cells determine their desired moves based on their current state and the states of neighboring cells, and write these desired moves to the buffer. Once all cells have been processed, the simulation applies the desired moves from the buffer to the main grid in a separate pass. This approach ensures that all cells are updated based on the same initial state, eliminating directional bias. It is a bit more complex to implement than randomizing the update order, but it could provide more consistent results without having to mess with the update order.
+                    This solution involves keeping track of a "desired" moves buffer in addition to the main simulation
+                    grid. During each update cycle, cells determine their desired moves based on their current state and
+                    the states of neighboring cells, and write these desired moves to the buffer. Once all cells have
+                    been processed, the simulation applies the desired moves from the buffer to the main grid in a
+                    separate pass. This approach ensures that all cells are updated based on the same initial state,
+                    eliminating directional bias. It is a bit more complex to implement than randomizing the update
+                    order, but it could provide more consistent results without having to mess with the update order.
                 </p>
 
                 <p>
-                    After carefully considering both options, I decided to implement the double buffering approach in Avalanche. 
+                    After carefully considering both options, I decided to implement the double buffering approach in
+                    Avalanche.
                 </p>
 
                 <h3 id="why-double-buffering">Why Double Buffering?</h3>
 
-                <p>I felt that it would provide a more robust solution to the directional bias issue while also allowing for greater control over the simulation's behavior and the other option feels more like a band aid solution that is not actually tackling the problem at hand.</p>
+                <p>I felt that it would provide a more robust solution to the directional bias issue while also allowing
+                    for greater control over the simulation's behavior and the other option feels more like a band aid
+                    solution that is not actually tackling the problem at hand.</p>
 
                 <p>
-                    Specifically, the key factor of me choosing double buffering is that immediate updates create a dependencies:
+                    Specifically, the key factor of me choosing double buffering is that immediate updates create a
+                    dependencies:
                 </p>
 
                 <p>Without double buffering:</p>
@@ -254,12 +324,27 @@ Games Now! | <a href="https://www.youtube.com/watch?v=Mr3E_voEG8Y">Nolla Games: 
 	_cellChanges.clear();
 }</code></pre>
                 <p>
-                    The code snippet above shows how I implemented the commit phase of the double buffering system in Avalanche. During the update phase, each cell's desired move is recorded in the _cellChanges vector as a pair of source and destination indices. In the commit phase, I first sort the _cellChanges vector to group all changes targeting the same destination together. <br><br>Then, I iterate through the sorted changes, and for each unique destination, I randomly select one of the source cells that want to move there. This randomness helps to further reduce any residual bias that might occur when multiple cells target the same destination. The selected cell's information is then applied to the destination, and the source cell is cleared. Finally, I clear the _cellSwaps and _cellChanges vectors to prepare for the next update cycle.
+                    The code snippet above shows how I implemented the commit phase of the double buffering system in
+                    Avalanche. During the update phase, each cell's desired move is recorded in the _cellChanges vector
+                    as a pair of source and destination indices. In the commit phase, I first sort the _cellChanges
+                    vector to group all changes targeting the same destination together. <br><br>Then, I iterate through
+                    the sorted changes, and for each unique destination, I randomly select one of the source cells that
+                    want to move there. This randomness helps to further reduce any residual bias that might occur when
+                    multiple cells target the same destination. The selected cell's information is then applied to the
+                    destination, and the source cell is cleared. Finally, I clear the _cellSwaps and _cellChanges
+                    vectors to prepare for the next update cycle.
                 </p>
 
-                 <h3 id="chunking">Adding a proper chunking framework</h3>
-                 <p>It is very wasteful to loop over all cells in a sector every frame, especially when many of them are inactive. To optimize this, I implemented a chunking system where the sector (a single grid of 500x500 cells) is divided into smaller chunks of 50x50 cells. Only active chunks are processed each frame, significantly reducing the number of cells that need to be checked. Chunks themselves don't know anything about how many cell they contain or what type of cells they are. Chunks are just containers that can be active or asleep. This implementation reduced the number of checks I needed to do per frame because in most cases many chunks remain inactive and have lots of empty space, this improved overall performance quite a bit.</p>
-                 
+                <h3 id="chunking">Adding a proper chunking framework</h3>
+                <p>It is very wasteful to loop over all cells in a sector every frame, especially when many of them are
+                    inactive. To optimize this, I implemented a chunking system where the sector (a single grid of
+                    500x500 cells) is divided into smaller chunks of 50x50 cells. Only active chunks are processed each
+                    frame, significantly reducing the number of cells that need to be checked. Chunks themselves don't
+                    know anything about how many cell they contain or what type of cells they are. Chunks are just
+                    containers that can be active or asleep. This implementation reduced the number of checks I needed
+                    to do per frame because in most cases many chunks remain inactive and have lots of empty space, this
+                    improved overall performance quite a bit.</p>
+
                 <pre><code class="language-cpp">for (int i = 0; i &lt; activeChunks.size(); i++)
 {
     SectorChunk* chunk = activeChunks[i];
@@ -278,12 +363,19 @@ Games Now! | <a href="https://www.youtube.com/watch?v=Mr3E_voEG8Y">Nolla Games: 
     }
 }</code></pre>
 
-                <video src="../media/chunking.mp4" controls loop preload="metadata" playsinline style="max-width: 100%; height: auto;"></video>
-                <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing double buffering and chunking implementation. Notice there is no directional bias anymore.</p>
+                <video src="../media/avalanche/chunking.mp4" controls loop preload="metadata" playsinline
+                    style="max-width: 100%; height: auto;"></video>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing double buffering
+                    and chunking implementation. Notice there is no directional bias anymore.</p>
 
-                 <h2 id="flexibility-api">Flexibility and API Design</h2>
+                <h2 id="flexibility-api">Flexibility and API Design</h2>
                 <p>
-                    One of the project goals was to provide a clean and flexible API that allows users to define custom cell types and behaviors easily. This had me stumped for a while on how I wanted to implement this. Initially, I had one enum that defined all known cell moves and behaviors, but this quickly became unmanageable as I added more cell types and more importantly, users couldn't define their own cell types without modifying the engine code itself. This is bad because an engine like this should not make any assumptions about what kind of cells the user wants to simulate.
+                    One of the project goals was to provide a clean and flexible API that allows users to define custom
+                    cell types and behaviors easily. This had me stumped for a while on how I wanted to implement this.
+                    Initially, I had one enum that defined all known cell moves and behaviors, but this quickly became
+                    unmanageable as I added more cell types and more importantly, users couldn't define their own cell
+                    types without modifying the engine code itself. This is bad because an engine like this should not
+                    make any assumptions about what kind of cells the user wants to simulate.
                 </p>
 
                 <pre><code class="language-cpp">enum class CellMoveFlags : uint8_t 
@@ -298,7 +390,12 @@ Games Now! | <a href="https://www.youtube.com/watch?v=Mr3E_voEG8Y">Nolla Games: 
 CellMoveFlags flags = CellMoveFlags::MOVE_DOWN | CellMoveFlags::MOVE_SIDE;</code></pre>
 
                 <p>
-                    To solve this, I designed a more data-driven approach where users can define their own cell types and behaviors using function pointers. This is all possible with the <code>CellUpdateContext</code> struct. This struct is a context object passed to cell update functions, providing them with all the necessary information and utilities to perform their behavior. This allows users to create new cell types without modifying the engine code itself, making it much more flexible and extensible. <br><br>Here is an example of how a user-defined cell update function can look like:
+                    To solve this, I designed a more data-driven approach where users can define their own cell types
+                    and behaviors using function pointers. This is all possible with the <code>CellUpdateContext</code>
+                    struct. This struct is a context object passed to cell update functions, providing them with all the
+                    necessary information and utilities to perform their behavior. This allows users to create new cell
+                    types without modifying the engine code itself, making it much more flexible and extensible.
+                    <br><br>Here is an example of how a user-defined cell update function can look like:
                 </p>
 
                 <pre><code class="language-cpp">bool UpdateSandCell(avl::CellUpdateContext& ctx)
@@ -324,7 +421,12 @@ CellMoveFlags flags = CellMoveFlags::MOVE_DOWN | CellMoveFlags::MOVE_SIDE;</code
 	}
 }</code></pre>
                 <p>
-                    In this example, the <code>UpdateSandCell</code> function defines the behavior of a sand cell using the given <code>CellUpdateContext</code> struct. It checks the cell directly below it, and if that cell is empty, it moves down. If the cell below is water (cell ID 3), it swaps places with the water cell half of the time, simulating sand sinking through water. The function uses methods provided by the <code>CellUpdateContext</code> to interact with the simulation, such as checking for out-of-bounds conditions, determining if a cell is empty, moving cells, and swapping cells.
+                    In this example, the <code>UpdateSandCell</code> function defines the behavior of a sand cell using
+                    the given <code>CellUpdateContext</code> struct. It checks the cell directly below it, and if that
+                    cell is empty, it moves down. If the cell below is water (cell ID 3), it swaps places with the water
+                    cell half of the time, simulating sand sinking through water. The function uses methods provided by
+                    the <code>CellUpdateContext</code> to interact with the simulation, such as checking for
+                    out-of-bounds conditions, determining if a cell is empty, moving cells, and swapping cells.
                 </p>
 
                 <pre><code class="language-cpp">avl::utils::register_cell
@@ -337,11 +439,16 @@ CellMoveFlags flags = CellMoveFlags::MOVE_DOWN | CellMoveFlags::MOVE_SIDE;</code
 );</code></pre>
 
                 <p>
-                    Registering a cell is trivial with the API. In this example, I register a fire cell with ID 4, a bright orange color, and associate it with the <code>OnUpdateFire</code> function.
+                    Registering a cell is trivial with the API. In this example, I register a fire cell with ID 4, a
+                    bright orange color, and associate it with the <code>OnUpdateFire</code> function.
                 </p>
 
                 <p>
-                    This works great for simple behaviors like sand and water, but more complex behaviors require the use of the user data field that is associated with each cell. This field can store arbitrary <code>uint32_t</code> data defined by the user, allowing for more complex state management within cell update functions. <br><br>For example, here is the implementation of the fire update function which I showed int the code block above that uses the user data system:
+                    This works great for simple behaviors like sand and water, but more complex behaviors require the
+                    use of the user data field that is associated with each cell. This field can store arbitrary
+                    <code>uint32_t</code> data defined by the user, allowing for more complex state management within
+                    cell update functions. <br><br>For example, here is the implementation of the fire update function
+                    which I showed int the code block above that uses the user data system:
                 </p>
 
 
@@ -405,11 +512,23 @@ CellMoveFlags flags = CellMoveFlags::MOVE_DOWN | CellMoveFlags::MOVE_SIDE;</code
 	return true;
 }</code></pre>
                 <p>
-                    In this example, the <code>OnUpdateFire</code> function defines the behavior of a fire cell. It uses the user data field to track the fire's lifetime and determine when it should go out. The function also changes the fire's color randomly and allows it to spread to neighboring cells. The use of flags in the user data field enables different fire behaviors, such as long or short lifetimes and immovability. Because every cell has its own user data field, multiple fire cells can exist simultaneously with independent states and behaviors and the flag <code>FLAMMABLE</code> can be added to other cell types to allow them to catch fire when adjacent to a fire cell.
+                    In this example, the <code>OnUpdateFire</code> function defines the behavior of a fire cell. It uses
+                    the user data field to track the fire's lifetime and determine when it should go out. The function
+                    also changes the fire's color randomly and allows it to spread to neighboring cells. The use of
+                    flags in the user data field enables different fire behaviors, such as long or short lifetimes and
+                    immovability. Because every cell has its own user data field, multiple fire cells can exist
+                    simultaneously with independent states and behaviors and the flag <code>FLAMMABLE</code> can be
+                    added to other cell types to allow them to catch fire when adjacent to a fire cell.
                 </p>
 
                 <p>
-                    If you look at this fire implementation, you might notice that there is no logic yet that actually sets other cells aflame. That's exactly the use case for the global <code>CellPostProcessor</code> update callback, this callback can be used when you want to perform some logic not based on a specific cell ID but rather on any cell with a specific user data flag or certain properties. This callback is called for every active cell in the simulation after all individual cell update functions have been called. This allows for global behaviors like fire spreading to adjacent flammable cells, regardless of their specific cell ID.
+                    If you look at this fire implementation, you might notice that there is no logic yet that actually
+                    sets other cells aflame. That's exactly the use case for the global <code>CellPostProcessor</code>
+                    update callback, this callback can be used when you want to perform some logic not based on a
+                    specific cell ID but rather on any cell with a specific user data flag or certain properties. This
+                    callback is called for every active cell in the simulation after all individual cell update
+                    functions have been called. This allows for global behaviors like fire spreading to adjacent
+                    flammable cells, regardless of their specific cell ID.
                 </p>
 
                 <pre><code class="language-cpp">void UpdateFireSpread(avl::CellUpdateContext& ctx, avl::CellUserData data)
@@ -475,19 +594,29 @@ CellMoveFlags flags = CellMoveFlags::MOVE_DOWN | CellMoveFlags::MOVE_SIDE;</code
 		}
 	}</code></pre>
                 <p>
-                    In this example, the <code>UpdateFireSpread</code> function checks if a cell is flammable and has any neighboring cells that are hot (on fire). If so, it increments the cell's lifetime counter. Once the counter reaches a certain threshold, the cell catches fire by plotting a new fire cell at its location. The function also ensures that the relevant chunks and sectors remain active to prevent the fire from going out too quickly. This global update mechanism allows for dynamic interactions between different cell types based on their properties rather than their specific IDs.
+                    In this example, the <code>UpdateFireSpread</code> function checks if a cell is flammable and has
+                    any neighboring cells that are hot (on fire). If so, it increments the cell's lifetime counter. Once
+                    the counter reaches a certain threshold, the cell catches fire by plotting a new fire cell at its
+                    location. The function also ensures that the relevant chunks and sectors remain active to prevent
+                    the fire from going out too quickly. This global update mechanism allows for dynamic interactions
+                    between different cell types based on their properties rather than their specific IDs.
                 </p>
 
                 <pre><code class="language-cpp">world->set_cell_post_processor(UpdateFireSpread);</code></pre><br>
 
                 <p>
-                    That is how fire is implemented in Avalanche! There are many more cell types and behaviors implemented in the demo project, but I won't go into all of them here. <br><br>Here is a video showcasing the fire spread behavior in action:
+                    That is how fire is implemented in Avalanche! There are many more cell types and behaviors
+                    implemented in the demo project, but I won't go into all of them here. <br><br>Here is a video
+                    showcasing the fire spread behavior in action:
                 </p>
 
-                <video src="../media/firespread.mp4" controls loop preload="metadata" playsinline style="max-width: 100%; height: auto;"></video>
-                <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing fire spread behavior implemented using the global cell post-processor callback.</p>
-                
-                <p>If you want to just directly interact with the falling sand grid, you can use the general plotting helper functions that exist in the <code>avl::World</code> class:</p>
+                <video src="../media/avalanche/firespread.mp4" controls loop preload="metadata" playsinline
+                    style="max-width: 100%; height: auto;"></video>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing fire spread
+                    behavior implemented using the global cell post-processor callback.</p>
+
+                <p>If you want to just directly interact with the falling sand grid, you can use the general plotting
+                    helper functions that exist in the <code>avl::World</code> class:</p>
                 <pre><code class="language-cpp">// Plot a single sand cell at (250, 0):
 world->plot_cell(250, 0, 1);
 // Plot a circle of sand cells with radius 10 at (200, 0):
@@ -500,31 +629,59 @@ world->plot_line(0, 0, 499, 499, 1);
 
                 <h2 id="multithreading">Multithreading</h2>
                 <p>
-                    To get even more performance out of the engine, I need to multi-thread the update process. This was quite hard to get right because of the double buffering system. Since the cellMoves buffer is written to by all the chunks in the single threaded version, I needed to implement a solution that would make sure that multiple threads could write to this buffer safely without causing race conditions or data corruption. I started doing research to see what other people had done in similar situations in falling sand engines. I watched a GDC talk by Petri Purho called <a href="https://www.youtube.com/watch?v=prXuyMCgbTc"> Exploring the Tech and Design of Noita
-</a> where he talked about how they implemented multithreading in their falling sand engine. 
+                    To get even more performance out of the engine, I need to multi-thread the update process. This was
+                    quite hard to get right because of the double buffering system. Since the cellMoves buffer is
+                    written to by all the chunks in the single threaded version, I needed to implement a solution that
+                    would make sure that multiple threads could write to this buffer safely without causing race
+                    conditions or data corruption. I started doing research to see what other people had done in similar
+                    situations in falling sand engines. I watched a GDC talk by Petri Purho called <a
+                        href="https://www.youtube.com/watch?v=prXuyMCgbTc"> Exploring the Tech and Design of Noita
+                    </a> where he talked about how they implemented multithreading in their falling sand engine.
                 </p>
 
                 <h4>1. Checkerboard updating pattern</h4>
-                <p style="text-align: center;"><img src="../media/noita-multithread.gif" alt="Noita" style="max-width: 100%; height: auto;" loading="lazy" decoding="async"></p>
-                <p style="text-align: center; font-size: smaller; font-style: italic;">GIF from GDC Festival of Gaming | <a href="https://www.youtube.com/watch?v=prXuyMCgbTc"> Exploring the Tech and Design of Noita</a></p>
+                <p style="text-align: center;"><img src="../media/avalanche/noita-multithread.gif" alt="Noita"
+                        style="max-width: 100%; height: auto;" loading="lazy" decoding="async"></p>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">GIF from GDC Festival of Gaming |
+                    <a href="https://www.youtube.com/watch?v=prXuyMCgbTc"> Exploring the Tech and Design of Noita</a>
+                </p>
 
                 <p>
-                    In this approach, the simulation grid is divided into a checkerboard pattern, where cells are grouped into two sets based on their coordinates (even and odd chunks). During each update cycle, one set of cells is processed while the other set remains static. This allows for safe parallel processing since cells in one set do not directly interact with cells in the other set during the same update, which means that we can prevent multiple threads from writing to the same part of the cellMoves buffer simultaneously. By alternating between the two sets in subsequent updates, the entire grid can be updated over time without introducing race conditions. This is the method used in Noita's falling everything engine as shown in the GIF above.
+                    In this approach, the simulation grid is divided into a checkerboard pattern, where cells are
+                    grouped into two sets based on their coordinates (even and odd chunks). During each update cycle,
+                    one set of cells is processed while the other set remains static. This allows for safe parallel
+                    processing since cells in one set do not directly interact with cells in the other set during the
+                    same update, which means that we can prevent multiple threads from writing to the same part of the
+                    cellMoves buffer simultaneously. By alternating between the two sets in subsequent updates, the
+                    entire grid can be updated over time without introducing race conditions. This is the method used in
+                    Noita's falling everything engine as shown in the GIF above.
                 </p>
 
                 <h4>2. Row-based updating pattern</h4>
-                <p style="text-align: center;"><img src="../media/row-based-multithread.gif" alt="Noita" style="max-width: 100%; height: auto;" loading="lazy" decoding="async"></p>
-                <p style="text-align: center; font-size: smaller; font-style: italic;">GIF from MARF | <a href="https://www.youtube.com/watch?v=5Ka3tbbT-9E"> How To Code a Falling Sand Simulation (like Noita) with Cellular Automata</a></p>
+                <p style="text-align: center;"><img src="../media/avalanche/row-based-multithread.gif" alt="Noita"
+                        style="max-width: 100%; height: auto;" loading="lazy" decoding="async"></p>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">GIF from MARF | <a
+                        href="https://www.youtube.com/watch?v=5Ka3tbbT-9E"> How To Code a Falling Sand Simulation (like
+                        Noita) with Cellular Automata</a></p>
 
                 <p>
-                    This is another similar approach where the simulation grid is divided into horizontal rows. During each update cycle, rows are processed in parallel, with each thread handling a separate row. To prevent race conditions, the update order is staggered such that adjacent rows are not processed simultaneously. For example, in one update cycle, even-numbered rows are processed first, followed by odd-numbered rows in the next cycle. This ensures that cells in one row do not directly interact with cells in adjacent rows during the same update, allowing for safe parallel processing. This method is illustrated in the GIF above.
-                </p>
-                
-                <p>
-                    After considering both options, I decided to implement the checkerboard updating pattern in my project. I felt that it would provide a more robust solution to the multithreading issue while also allowing for greater control over the simulation's behavior and since I already have a proper chunking framework in place, it was relatively easy to implement.
+                    This is another similar approach where the simulation grid is divided into horizontal rows. During
+                    each update cycle, rows are processed in parallel, with each thread handling a separate row. To
+                    prevent race conditions, the update order is staggered such that adjacent rows are not processed
+                    simultaneously. For example, in one update cycle, even-numbered rows are processed first, followed
+                    by odd-numbered rows in the next cycle. This ensures that cells in one row do not directly interact
+                    with cells in adjacent rows during the same update, allowing for safe parallel processing. This
+                    method is illustrated in the GIF above.
                 </p>
 
-<pre><code class="language-cpp">void SimulationSector::_update()
+                <p>
+                    After considering both options, I decided to implement the checkerboard updating pattern in my
+                    project. I felt that it would provide a more robust solution to the multithreading issue while also
+                    allowing for greater control over the simulation's behavior and since I already have a proper
+                    chunking framework in place, it was relatively easy to implement.
+                </p>
+
+                <pre><code class="language-cpp">void SimulationSector::_update()
 {
 	std::vector&lt;SectorSimulationChunk*&gt; oddChunks;
 	std::vector&lt;SectorSimulationChunk*&gt; evenChunks;
@@ -574,14 +731,26 @@ world->plot_line(0, 0, 499, 499, 1);
 }</code></pre>
 
                 <p>
-                    One thing that I wanted to avoid was having to lock the cellMoves buffer during the update process using mutexes. Locking can introduce significant overhead and negate the benefits of multithreading, especially in a performance-critical application like a falling sand engine. To avoid this, I decided to allocate separate cellMoves buffers for each thread. This way, each thread can write to its own buffer without needing to lock anything, allowing for safe and efficient parallel processing. After all threads have completed their updates, the individual buffers are merged into the main cellMoves buffer in a single-threaded commit phase. This approach maximizes performance while still ensuring that all cell updates are applied correctly.
+                    One thing that I wanted to avoid was having to lock the cellMoves buffer during the update process
+                    using mutexes. Locking can introduce significant overhead and negate the benefits of multithreading,
+                    especially in a performance-critical application like a falling sand engine. To avoid this, I
+                    decided to allocate separate cellMoves buffers for each thread. This way, each thread can write to
+                    its own buffer without needing to lock anything, allowing for safe and efficient parallel
+                    processing. After all threads have completed their updates, the individual buffers are merged into
+                    the main cellMoves buffer in a single-threaded commit phase. This approach maximizes performance
+                    while still ensuring that all cell updates are applied correctly.
                 </p>
 
                 <pre><code class="language-cpp">std::vector&lt;std::vector&lt;std::pair&lt;int, int&gt;&gt;&gt; _threadCellChanges;</code></pre>
-                <p style="text-align: center; font-size: smaller; font-style: italic;">Each thread can use its own buffer to record cell changes, avoiding the need for mutex locks during parallel processing.</p>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Each thread can use its own
+                    buffer to record cell changes, avoiding the need for mutex locks during parallel processing.</p>
 
                 <p>
-                    When a thread wants to record a cell change, it simply appends the change to its own buffer. During the commit phase, all thread-specific buffers are merged into the main cellMoves buffer in a single-threaded context, ensuring that all changes are applied correctly without any race conditions. This synchronization is obviously not free, but it is much more efficient than locking during the update phase because threads can work independently without waiting for each other.
+                    When a thread wants to record a cell change, it simply appends the change to its own buffer. During
+                    the commit phase, all thread-specific buffers are merged into the main cellMoves buffer in a
+                    single-threaded context, ensuring that all changes are applied correctly without any race
+                    conditions. This synchronization is obviously not free, but it is much more efficient than locking
+                    during the update phase because threads can work independently without waiting for each other.
                 </p>
                 <pre><code class="language-cpp">// Merge cell changes.
 for (int i = 0; i < _numThreads; i++)
@@ -605,7 +774,9 @@ for (int i = 0; i < _numThreads; i++)
 	}
 }</code></pre>
                 <p>
-                    To actually create and manage threads, I use OpenMP which makes it really easy to parallelize loops with minimal code changes and I don't need to manage thread lifetimes myself. Here is how I process chunks in parallel using OpenMP:
+                    To actually create and manage threads, I use OpenMP which makes it really easy to parallelize loops
+                    with minimal code changes and I don't need to manage thread lifetimes myself. Here is how I process
+                    chunks in parallel using OpenMP:
                 </p>
 
                 <pre><code class="language-cpp">	void SimulationSector::_process_chunks(std::vector<SectorSimulationChunk*>& chunks)
@@ -628,58 +799,97 @@ for (int i = 0; i < _numThreads; i++)
         }
     }</code></pre>
 
-                <p>After all this hard work, Avalanche is now able to maintain high framerates while simulating a gigantic number of cells. I quickly ran my stress test demo, which places 50 cells per second going across the screen for 6000 units. And it held up remarkably well, maintaining smooth performance throughout. <br><br>The single threaded version had an average time step of <code>11ms</code> with the .1% lows hitting <code>21ms</code> and the new multithreaded version scored an average time step of <code>4ms!</code> with the .1% lows hitting <code>5ms!</code>. This means that the multithreaded version was able to update the simulation more than twice as fast as the single-threaded version.</p>
-                
-                 <video src="../media/stress-test.mp4" controls loop preload="metadata" playsinline style="max-width: 100%; height: auto;"></video>
-                <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing horizontal stress test with 50 cells per second for 6000 units. Debug overlay enabled to compare results. Any visual artifacts are caused by the recording software having a different framerate.</p>
-                
-                <h2 id="one-million">The final test</h2>
-                <p>I am very happy with these results but now there is only one last thing to do. To see if I hit my initial goal of simulating one million cells...</p>
+                <p>After all this hard work, Avalanche is now able to maintain high framerates while simulating a
+                    gigantic number of cells. I quickly ran my stress test demo, which places 50 cells per second going
+                    across the screen for 6000 units. And it held up remarkably well, maintaining smooth performance
+                    throughout. <br><br>The single threaded version had an average time step of <code>11ms</code> with
+                    the .1% lows hitting <code>21ms</code> and the new multithreaded version scored an average time step
+                    of <code>4ms!</code> with the .1% lows hitting <code>5ms!</code>. This means that the multithreaded
+                    version was able to update the simulation more than twice as fast as the single-threaded version.
+                </p>
 
-                <video src="../media/one-million-cells.mp4" controls loop preload="metadata" playsinline style="max-width: 100%; height: auto;"></video>
-                <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing one million cells simulated in real-time. Each sector grid holds 250,000 cells. Any visual artifacts are caused by the recording software having a different framerate. It looks all smooth in-person!</p>
+                <video src="../media/avalanche/stress-test.mp4" controls loop preload="metadata" playsinline
+                    style="max-width: 100%; height: auto;"></video>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing horizontal
+                    stress test with 50 cells per second for 6000 units. Debug overlay enabled to compare results. Any
+                    visual artifacts are caused by the recording software having a different framerate.</p>
+
+                <h2 id="one-million">The final test</h2>
+                <p>I am very happy with these results but now there is only one last thing to do. To see if I hit my
+                    initial goal of simulating one million cells...</p>
+
+                <video src="../media/avalanche/one-million-cells.mp4" controls loop preload="metadata" playsinline
+                    style="max-width: 100%; height: auto;"></video>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing one million
+                    cells simulated in real-time. Each sector grid holds 250,000 cells. Any visual artifacts are caused
+                    by the recording software having a different framerate. It looks all smooth in-person!</p>
 
                 <p>
-                    And yes! I achieved my goal! The simulation remains stable while running way above 60 fps with a max average (.1% lows) time step of <code>~10ms</code>. The combination of double buffering, chunking, a flexible API, and multithreading allowed Avalanche to handle large numbers of cells efficiently while maintaining realistic behavior and user-defined interactions. Running on my Ryzen 5 9600x CPU.
+                    And yes! I achieved my goal! The simulation remains stable while running way above 60 fps with a max
+                    average (.1% lows) time step of <code>~10ms</code>. The combination of double buffering, chunking, a
+                    flexible API, and multithreading allowed Avalanche to handle large numbers of cells efficiently
+                    while maintaining realistic behavior and user-defined interactions. Running on my Ryzen 5 9600x CPU.
                 </p>
 
                 <h2 id="conclusion">Conclusion</h2>
                 <p>
-                    Building Avalanche has been an incredible learning experience. I gained a deeper understanding of cellular automata, performance optimization, and multithreading techniques. The challenges I faced along the way pushed me to think creatively and find innovative solutions to complex problems. I am proud of what I have accomplished with Avalanche and excited about the possibilities it opens up for future projects. Whether you're a fellow game dev, a math geek, or just curious about how falling sand simulations work, I hope this blog post was enjoyable to read and has provided valuable insights into the design and implementation of such systems.
+                    Building Avalanche has been an incredible learning experience. I gained a deeper understanding of
+                    cellular automata, performance optimization, and multithreading techniques. The challenges I faced
+                    along the way pushed me to think creatively and find innovative solutions to complex problems. I am
+                    proud of what I have accomplished with Avalanche and excited about the possibilities it opens up for
+                    future projects. Whether you're a fellow game dev, a math geek, or just curious about how falling
+                    sand simulations work, I hope this blog post was enjoyable to read and has provided valuable
+                    insights into the design and implementation of such systems.
                 </p>
 
                 <h2 id="references">References</h2>
                 <p>
-                    This blog post and the Avalanche engine were inspired by and built upon the following resources and projects:
+                    This blog post and the Avalanche engine were inspired by and built upon the following resources and
+                    projects:
                 </p>
                 <ul>
-                    <li><strong>Noita</strong> by Nolla Games - A pixel-based action roguelike that inspired the falling sand engine concept. Visit <a href="https://noitagame.com/">noitagame.com</a> and read about <a href="https://nollagames.com/fallingeverything/">the falling everything engine</a>.</li>
-                    <li><strong>"Exploring the Tech and Design of Noita"</strong> - GDC talk by Petri Purho discussing multithreading approaches in falling sand simulations. Watch on <a href="https://www.youtube.com/watch?v=prXuyMCgbTc">YouTube</a>.</li>
-                    <li><strong>"Recreating Noita's Sand Simulation in C and OpenGL | Game Engineering"</strong> - Educational resource by John Jackson explaining sand simulation fundamentals. Watch on <a href="https://www.youtube.com/watch?v=VLZjd_Y1gJ8">YouTube</a>.</li>
-                    <li><strong>"How To Code a Falling Sand Simulation (like Noita) with Cellular Automata"</strong> - Tutorial by MARF covering row-based multithreading patterns. Watch on <a href="https://www.youtube.com/watch?v=5Ka3tbbT-9E">YouTube</a>.</li>
-                    <li><strong>Winter Dev's Falling Sand Project</strong> - An inspiring falling sand implementation that influenced the design decisions in this project. Visit <a href="https://winter.dev/articles/falling-sand">winter.dev/articles/falling-sand</a>.</li>
-                    <li><strong>OpenMP Documentation cheat sheet</strong> - Official OpenMP documentation providing insights into parallel programming techniques. Available at <a href="https://www.openmp.org/wp-content/uploads/OpenMP-API-Specification-5.0.pdf">openmp.org</a> And the c/c++ cheat sheet <a href="https://www.openmp.org/wp-content/uploads/OpenMP3.1-CCard.pdf">here</a>.</li>
+                    <li><strong>Noita</strong> by Nolla Games - A pixel-based action roguelike that inspired the falling
+                        sand engine concept. Visit <a href="https://noitagame.com/">noitagame.com</a> and read about <a
+                            href="https://nollagames.com/fallingeverything/">the falling everything engine</a>.</li>
+                    <li><strong>"Exploring the Tech and Design of Noita"</strong> - GDC talk by Petri Purho discussing
+                        multithreading approaches in falling sand simulations. Watch on <a
+                            href="https://www.youtube.com/watch?v=prXuyMCgbTc">YouTube</a>.</li>
+                    <li><strong>"Recreating Noita's Sand Simulation in C and OpenGL | Game Engineering"</strong> -
+                        Educational resource by John Jackson explaining sand simulation fundamentals. Watch on <a
+                            href="https://www.youtube.com/watch?v=VLZjd_Y1gJ8">YouTube</a>.</li>
+                    <li><strong>"How To Code a Falling Sand Simulation (like Noita) with Cellular Automata"</strong> -
+                        Tutorial by MARF covering row-based multithreading patterns. Watch on <a
+                            href="https://www.youtube.com/watch?v=5Ka3tbbT-9E">YouTube</a>.</li>
+                    <li><strong>Winter Dev's Falling Sand Project</strong> - An inspiring falling sand implementation
+                        that influenced the design decisions in this project. Visit <a
+                            href="https://winter.dev/articles/falling-sand">winter.dev/articles/falling-sand</a>.</li>
+                    <li><strong>OpenMP Documentation cheat sheet</strong> - Official OpenMP documentation providing
+                        insights into parallel programming techniques. Available at <a
+                            href="https://www.openmp.org/wp-content/uploads/OpenMP-API-Specification-5.0.pdf">openmp.org</a>
+                        And the c/c++ cheat sheet <a
+                            href="https://www.openmp.org/wp-content/uploads/OpenMP3.1-CCard.pdf">here</a>.</li>
                 </ul>
                 <p>
-                    These resources provided invaluable insights into performance optimization, API design, and simulation techniques that shaped the development of this project.
+                    These resources provided invaluable insights into performance optimization, API design, and
+                    simulation techniques that shaped the development of this project.
                 </p>
 
             </div>
         </article>
     </div>
 
-<script src="../js/particles.js"></script>
-<script src="../js/app.js"></script>
-<script src="../js/smooth-scroll.js"></script>
+    <script src="../js/particles.js"></script>
+    <script src="../js/app.js"></script>
+    <script src="../js/smooth-scroll.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 
-<script>
-    window.addEventListener('load', function() {
-        Prism.highlightAll();
-    });
-</script>
+    <script>
+        window.addEventListener('load', function () {
+            Prism.highlightAll();
+        });
+    </script>
 
 
 </body>
