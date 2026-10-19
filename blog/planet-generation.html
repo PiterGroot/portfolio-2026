@@ -41,8 +41,8 @@
         <a href="../index.html" class="back-link">← Back</a>
         <article>
             <header class="blog-post-header">
-                <p style="text-align: center;"><img src="../media/logo.png" alt="Avalanche Engine Logo"
-                        style="max-width: 100%; width: 600px; height: auto; margin: 30px 0;" loading="lazy"
+                <p style="text-align: center;"><img src="../media/planet/logo.png" alt="Avalanche Engine Logo"
+                        style="max-width: 100%; width: 900px; height: auto; margin: 30px 0;" loading="lazy"
                         decoding="async"></p>
 
                 <h1 class="blog-post-title">Planet generation</h1>
@@ -67,8 +67,43 @@
                 <h2 style="margin-bottom: 12px;">Table of Contents</h2>
                 <ul style="margin-bottom: 40px; line-height: 1.8;">
                     <li><a href="#introduction">Introduction</a></li>
+                    <li><a href="#showcase">Showcase</a></li>
                     <li><a href="#references">References</a></li>
                 </ul>
+
+                <h2 id="showcase">Showcase</h2>
+
+                Here is the complete feature list implemented in the final product:
+
+                <p>
+                <ul>
+                    <li><strong>Scale:</strong> Able to generate huge planets using real-life planetary
+                        scales.
+                    </li>
+                    <li><strong>Real-time Level of Detail (LOD):</strong> Uses a custom LOD system to
+                        automatically adjust the quality of the terrain based on the observer distance. Allowing for
+                        real-time generation without majorly impacting impacting performance.</li>
+                    <li><strong>Terrain scatter:</strong> A fully configurable, optimized biome-depended terrain
+                        scatter. Able to scatter millions of terrain pieces on the surface of planets. Utilizing
+                        Unreal's Procedural Generation Framework (PCG) using custom PCG graph nodes.
+                    </li>
+                    <li><strong>Biomes:</strong> Planets can be generated with random biomes that have unique colors,
+                        terrain scatter and specific terrain noise. Biomes shape the terrain.
+                    <li><strong>Layered fBM noise:</strong> Layers of noise can be stacked on top of each other to fully
+                        customize the look of the terrain.</li>
+                    <li><strong>Determinism:</strong> Planet generation is fully deterministic, resulting in predictable
+                        random generation when tweaking.</li>
+                </ul>
+                </p>
+
+                <video src="../media/planet/planet_showcase.mp4" controls loop preload="metadata" playsinline
+                    style="max-width: 100%; height: auto;"></video>
+
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing planet (same
+                    size of the earth) with some exaggerated noise, biomes and terrain scattering. Quality of the
+                    terrain is dynamically adjusted using the LOD system based on the distance of the camera.</a>
+                </p>
+
 
                 <!-- <pre><code class="language-cpp">// Code blocks: set the language class and the autoloader fetches it
 int main() { return 0; }</code></pre> -->
