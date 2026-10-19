@@ -41,7 +41,7 @@
         <a href="../index.html" class="back-link">← Back</a>
         <article>
             <header class="blog-post-header">
-                <p style="text-align: center;"><img src="../media/planet/logo.png" alt="Avalanche Engine Logo"
+                <p style="text-align: center;"><img src="../media/planet/logo.png" alt="Planet banner"
                         style="max-width: 100%; width: 900px; height: auto; margin: 30px 0;" loading="lazy"
                         decoding="async"></p>
 
@@ -50,6 +50,7 @@
 
                 <div class="blog-post-meta">
                     Published on <time datetime="2026-10-19">October 19, 2026</time>
+                    | <span id="read-time"></span>
                 </div>
 
             </header>
@@ -110,6 +111,19 @@ int main() { return 0; }</code></pre> -->
             </div>
         </article>
     </div>
+
+    <script>
+        const content = document.querySelector('.blog-post-content');
+        const clone = content.cloneNode(true);
+        clone.querySelectorAll('pre').forEach(el => el.remove());
+
+        const words = clone.innerText.trim().split(/\s+/).length;
+        const media = content.querySelectorAll('img, video').length;
+        const minutes = Math.ceil(words / 230 + (media * 12) / 60);
+
+        document.getElementById('read-time').textContent = `${minutes}~ min read`;
+    </script>
+</body>
 </body>
 
 </html>

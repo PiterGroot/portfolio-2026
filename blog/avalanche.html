@@ -61,7 +61,7 @@
                 <h1 class="blog-post-title">Building Avalanche: A C++ Falling Sand Engine</h1>
                 <p style="text-align: center;">Simulating one million falling sand cells on the CPU.</p>
 
-                <p class="blog-post-meta">January 7, 2026</p>
+                <p class="blog-post-meta">Published on January 7, 2026 | <span id="read-time"></span></p>
             </header>
 
             <div class="blog-post-content">
@@ -891,6 +891,17 @@ for (int i = 0; i < _numThreads; i++)
         });
     </script>
 
+    <script>
+        const content = document.querySelector('.blog-post-content');
+        const clone = content.cloneNode(true);
+        clone.querySelectorAll('pre').forEach(el => el.remove());
+
+        const words = clone.innerText.trim().split(/\s+/).length;
+        const media = content.querySelectorAll('img, video').length;
+        const minutes = Math.ceil(words / 230 + (media * 12) / 60);
+
+        document.getElementById('read-time').textContent = `${minutes}~ min read`;
+    </script>
 
 </body>
 
