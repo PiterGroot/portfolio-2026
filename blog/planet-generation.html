@@ -61,7 +61,7 @@
                 <p>
                     Space games have always intrigued me. Specifically titles like Elite Dangerous, Outer Wilds and
                     Kerbal Space Program. That's why, as part of my university assignment, I researched and developed a
-                    tool inside Unreal 5 to generate planets. Not just smaller "gamified" planets, but planets with huge
+                    tool inside Unreal 5 to generate planets. Not just small "gamified" planets, but planets with huge
                     scales nearing real-life sizes.
                 </p>
 
@@ -69,6 +69,7 @@
                 <ul style="margin-bottom: 40px; line-height: 1.8;">
                     <li><a href="#introduction">Introduction</a></li>
                     <li><a href="#showcase">Showcase</a></li>
+                    <li><a href="#genproc_sphere">Procedurally generating a sphere</a></li>
                     <li><a href="#references">References</a></li>
                 </ul>
 
@@ -105,6 +106,116 @@
                     terrain is dynamically adjusted using the LOD system based on the distance of the camera.</a>
                 </p>
 
+                <h2 id="genproc_sphere">Procedurally generating a sphere</h2>
+                <p>
+                    In order to generate planets, the tool first needs to be able to generate a sphere. There are a
+                    couple types of spheres that I could choose from. I narrowed my focus on the <strong>cube</strong>
+                    sphere, <strong>icosphere</strong> and <strong>Fibonacci</strong> sphere. To make a decision on
+                    which type of sphere I wanted to use, I listed the pros and cons of each type of sphere in a table
+                    to make it easier to compare them.
+
+
+                </p>
+
+
+                <img src="../media/planet/cube_sphere.png" alt="Cube sphere" style="max-width: 100%; height: auto;"
+                    loading="lazy" decoding="async">
+
+                <div style="overflow-x:auto">
+                    <table>
+                        <caption>Cubified sphere</caption>
+                        <thead>
+                            <tr>
+                                <th>Pros</th>
+                                <th>Cons</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Could be easier to divide faces into chunks.</td>
+                                <td>There are slight stretching and visible artifacts right along the edges and corners
+                                    where the six flat planes of the original cube meet.</td>
+                            </tr>
+                            <tr>
+                                <td>Points are decently uniform on the sphere.</td>
+                                <td>Harder to generate because the points of the original cube have to be projected on a
+                                    sphere.</td>
+                            </tr>
+                            <tr>
+                                <td>The number of subdivisions on each face can be increased in small steps. Unlike
+                                    icospheres where jumps massively increment polygons.</td>
+                                <td>A cube sphere with a lower resolution does not look round.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <img src="../media/planet/icosphere.png" alt="icosphere" style="max-width: 100%; height: auto;"
+                    loading="lazy" decoding="async">
+
+                <div style="overflow-x:auto">
+                    <table>
+                        <caption>Icosphere</caption>
+                        <thead>
+                            <tr>
+                                <th>Pros</th>
+                                <th>Cons</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Lacks the pinching poles of standard UV spheres, making it great for displacement,
+                                    rough terrain, or organic scatter.</td>
+                                <td>When increasing the resolution the triangle count explodes.</td>
+                            </tr>
+                            <tr>
+                                <td>Keeps a round look even at very low polygon counts, which is helpful for a stylized
+                                    look.</td>
+                                <td>Standard rectangular maps (world maps) distort badly on an icosphere compared to a
+                                    UV sphere.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <img src="../media/planet/fib_sphere.png" alt="Fibonacci sphere" style="max-width: 100%; height: auto;"
+                    loading="lazy" decoding="async">
+
+                <div style="overflow-x:auto">
+                    <table>
+                        <caption>Fibonacci sphere</caption>
+                        <thead>
+                            <tr>
+                                <th>Pros</th>
+                                <th>Cons</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Perfect point distribution</td>
+                                <td>Cant directly use for mesh generation because the winding order is all jumbled.
+                                    Needs to be projected on a plane first.</td>
+                            </tr>
+                            <tr>
+                                <td>Very cheap to generate because of the straight forward matxhs required.</td>
+                                <td>Has distorted poles, the points near the poles tend to cluster tighter than
+                                    those around the equator.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>
+
+                    After carefully considering all options, I decided to go for the cube sphere. I choose this sphere
+                    because it felt like a robust sphere with decent uniformity. Also the biggest was that I knew I
+                    eventually wanted to implement a Level of Detail system later on which could work nicely with this
+                    because every cube face could be a quadtree that could be used for the LOD's generation.<br><br>
+
+                    The only problem was that I would need to maybe apply some additional postprocessing to the edges of
+                    the
+                    cube faces because some visual artifacts could appear where those edges meet.
+                </p>
 
                 <!-- <pre><code class="language-cpp">// Code blocks: set the language class and the autoloader fetches it
 int main() { return 0; }</code></pre> -->

@@ -522,3 +522,41 @@ canvas {
   line-height: 1.6;
   margin: 0;
 }
+
+.blog-post-content li {
+  margin-bottom: 8px;
+  list-style: inherit;
+  /* take disc from the parent ul, overriding the reset */
+}
+
+.blog-post-content table {
+  width: 100%;
+  margin: 20px 0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.blog-post-content th,
+.blog-post-content td {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 10px 14px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.blog-post-content th {
+  background: rgba(255, 255, 255, 0.06);
+  color: #dddddd;
+  font-weight: 600;
+}
+
+.blog-post-content tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.blog-post-content caption {
+  caption-side: bottom;
+  padding-top: 8px;
+  font-size: smaller;
+  font-style: italic;
+  color: #888;
+}
