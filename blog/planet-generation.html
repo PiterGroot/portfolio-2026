@@ -70,6 +70,7 @@
                     <li><a href="#introduction">Introduction</a></li>
                     <li><a href="#showcase">Showcase</a></li>
                     <li><a href="#genproc_sphere">Procedurally generating a sphere</a></li>
+                    <li><a href="#noise">Adding noise</a></li>
                     <li><a href="#references">References</a></li>
                 </ul>
 
@@ -113,13 +114,14 @@
                     sphere, <strong>icosphere</strong> and <strong>Fibonacci</strong> sphere. To make a decision on
                     which type of sphere I wanted to use, I listed the pros and cons of each type of sphere in a table
                     to make it easier to compare them.
-
-
                 </p>
 
 
                 <img src="../media/planet/cube_sphere.png" alt="Cube sphere" style="max-width: 100%; height: auto;"
-                    loading="lazy" decoding="async">
+                    loading="lazy" decoding="async"><br>
+
+                A cubified sphere simply starts as a normal cube. Then by pulling its vertices toward its center, it
+                will become a nice sphere mesh.
 
                 <div style="overflow-x:auto">
                     <table>
@@ -151,7 +153,10 @@
                 </div>
 
                 <img src="../media/planet/icosphere.png" alt="icosphere" style="max-width: 100%; height: auto;"
-                    loading="lazy" decoding="async">
+                    loading="lazy" decoding="async"><br>
+
+                The Icosphere (icosahedron) has twenty sides so it provides the most even vertex distribution of all the
+                options.
 
                 <div style="overflow-x:auto">
                     <table>
@@ -179,7 +184,10 @@
                 </div>
 
                 <img src="../media/planet/fib_sphere.png" alt="Fibonacci sphere" style="max-width: 100%; height: auto;"
-                    loading="lazy" decoding="async">
+                    loading="lazy" decoding="async"><br>
+
+                Using the golden ratio, points are plotted almost evenly across the surface of an imaginary sphere using
+                the golden ratio and spiral patterns.
 
                 <div style="overflow-x:auto">
                     <table>
@@ -212,10 +220,96 @@
                     eventually wanted to implement a Level of Detail system later on which could work nicely with this
                     because every cube face could be a quadtree that could be used for the LOD's generation.<br><br>
 
-                    The only problem was that I would need to maybe apply some additional postprocessing to the edges of
-                    the
-                    cube faces because some visual artifacts could appear where those edges meet.
+                    The only thing I will have to take into account is that I would maybe need to apply some additional
+                    postprocessing to the edges of the cube faces because some visual artifacts could appear where those
+                    edges meet.
+
+                    This can be seen in the initial implementation inside unreal, if you look closely, you can see the
+                    seam on the edges of the cube faces:
                 </p>
+
+                <img src="../media/planet/cube_sphere_unreal.png" alt="Fibonacci sphere"
+                    style="max-width: 100%; height: auto;" loading="lazy" decoding="async"><br>
+
+                <p>
+                    The sphere is built out of six separate faces, one for each side of the original cube. Every face
+                    is defined by a <code>localUp</code> direction (the direction the face points to) and two axes,
+                    <code>axisA</code> and <code>axisB</code>, that lie flat on the face and are perpendicular to
+                    <code>localUp</code>. Each face is a grid of <code>resolution × resolution</code> vertices, so the
+                    <code>resolution</code> controls how detailed the face becomes.
+                </p>
+
+                <pre><code  class="language-cpp">
+for (int y = 0; y < resolution; y++)
+{
+    for (int x = 0; x < resolution; x++)
+    {
+        int i = x + y * resolution;
+
+        FVector2f percent = FVector2f(x, y) / (resolution - 1);
+        FVector3f pointOnUnitCube = localUp + (percent.X - .5f) * 2 * axisA + (percent.Y - .5f) * 2 * axisB;
+        
+        // Normalize vector representing point on cube.
+        pointOnUnitCube.Normalize();
+
+        vertices[i] = FVector(shapeGenerator->CalculatePointOnPlanet(pointOnUnitCube));
+        uVs[i] = FVector2D(percent.X, percent.Y);
+
+        // Create triangles.
+        if (x != resolution - 1 && y != resolution - 1)
+        {
+            triangles[triIndex] = i;
+            triangles[triIndex + 1] = i + resolution + 1;
+            triangles[triIndex + 2] = i + resolution;
+
+            triangles[triIndex + 3] = i;
+            triangles[triIndex + 4] = i + 1;
+            triangles[triIndex + 5] = i + resolution + 1;
+            triIndex += 6;
+        }
+    }
+}
+                </code></pre>
+
+                <p>
+                    For every vertex in the grid, I first calculate how far along the face it is as a percentage
+                    between 0 and 1. That percentage is remapped to a range of -1 to 1 and used to offset the point
+                    from the center of the face along both axes, which gives a point on the surface of a unit cube.
+                    Normalizing that point pulls it toward the center so it ends up on a unit sphere.
+
+                    <br><br>The point is then
+                    passed to the shape generator, which scales it to the planet's radius and applies the terrain
+                    noise.
+                </p>
+
+                <pre><code class="language-cpp">
+FVector3f UShapeGenerator::CalculatePointOnPlanet(FVector3f pointOnSphere)
+{
+    return pointOnSphere * planetRadius;
+}
+                </code></pre>
+
+                The same percentage is reused as the UV coordinate. Finally, for every vertex that isn't on
+                the last row or column, two triangles are created to form a quad with its neighbors to the right
+                and below.
+
+                <pre><code class="language-cpp">
+// Create triangles.
+if (x != resolution - 1 && y != resolution - 1)
+{
+    triangles[triIndex] = i;
+    triangles[triIndex + 1] = i + resolution + 1;
+    triangles[triIndex + 2] = i + resolution;
+
+    triangles[triIndex + 3] = i;
+    triangles[triIndex + 4] = i + 1;
+    triangles[triIndex + 5] = i + resolution + 1;
+    triIndex += 6;
+}
+</code></pre>
+
+
+                <h2 id="noise">Adding noise</h2>
 
                 <!-- <pre><code class="language-cpp">// Code blocks: set the language class and the autoloader fetches it
 int main() { return 0; }</code></pre> -->
@@ -234,7 +328,6 @@ int main() { return 0; }</code></pre> -->
 
         document.getElementById('read-time').textContent = `${minutes}~ min read`;
     </script>
-</body>
 </body>
 
 </html>
