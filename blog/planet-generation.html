@@ -329,15 +329,135 @@ float UNoiseFilter::EvaluateNoise(FVector3f point)
 }
 </code></pre>
 
+                <p>
+                    The noise filter has one job: take a point on the sphere and return a noise value for it. Unreal's
+                    <code>FMath::PerlinNoise3D</code> returns a value between -1 and 1, so I remap it to a range of 0 to
+                    1.
+                    This way the noise only ever pushes the terrain outward and never carves below the base radius of
+                    the
+                    planet. Because the filter only knows about points and noise values, it has no idea it is being used
+                    to shape a planet, which means it can be swapped out, extended or reused elsewhere without touching
+                    any of the mesh generation code.
+                </p>
+
 
                 <pre><code class="language-cpp">
 FVector3f UShapeGenerator::CalculatePointOnPlanet(FVector3f pointOnSphere)
 {
-    return pointOnSphere * planetRadius;
-    float terrainHeight = shapeGenerator->EvaluateNoise(pointOnSphere);
+    float terrainHeight = noiseFilter->EvaluateNoise(pointOnSphere);
     return pointOnSphere * planetRadius * (1 + terrainHeight);
 }
 </code></pre>
+
+                <p>
+                    The shape generator then asks the noise filter for a height at the given point and uses it to push
+                    the vertex outward from its base radius.<br><br>
+
+                    Splitting the shape generator and the noise filter into separate classes was an intentional design
+                    decision. The mesh generation only talks to the shape generator, and the shape generator only talks
+                    to the noise filter, so each part of the framework stays independent of the others. This keeps the
+                    system loosely coupled. <br><br>All this work resulted in something that already started to look a
+                    bit like a planet:
+                </p>
+
+                <img src="../media/planet/planet_initial_noise.png" alt="Fibonacci sphere"
+                    style="max-width: 100%; height: auto;" loading="lazy" decoding="async"><br>
+
+                <p>
+                    To make it look even more interesting, I wanted to add the ability to stack different layers of
+                    fractal noise on top of each other. To do that, I first needed to sample fractal noise instead of
+                    normal noise. Fractal noise (or frequently called fbm noise) can be sampled by multiplying noise
+                    maps with different amplitudes, frequencies and persistence's.
+                </p>
+
+                <img src="../media/planet/fractal_noise_explanation.png" alt="Fibonacci sphere"
+                    style="max-width: 100%; height: auto;" loading="lazy" decoding="async"><br>
+
+                <p>
+                    In terms of the code implementation, this means I loop over the octave count and sample noise. On
+                    every sample, the specified frequency, amplitude and persistence gets added in different ways to
+                    transform each level of octave just like in the image shown above; noise samples with different
+                    fractal settings get overlapped to a final noise map. Resulting in having the ability to tweak both
+                    the broader and the finer details.
+                </p>
+
+                <pre><code class="language-cpp">
+float UNoiseFilter::EvaluateNoise(FVector3f point, FNoiseSettings noiseSettings)
+{
+    float noiseValue = 0;
+
+    float frequency = noiseSettings.baseRoughness;
+    float amplitude = 1;
+
+    for (int i = 0; i < noiseSettings.octaves; i++)
+    {
+        float perlin = FMath::PerlinNoise3D(FVector(point * frequency + noiseSettings.center));
+        noiseValue += (perlin + 1) * .5f * amplitude;
+
+        // Every pass, frequency gets multiplied against the roughness.
+        frequency *= noiseSettings.roughness;
+        // Every pass, frequency gets multiplied against the persistence.
+        amplitude *= noiseSettings.persistence;
+    }
+
+    noiseValue = FMath::Max(0, noiseValue - noiseSettings.minValue);
+    return noiseValue * noiseSettings.strength;
+}
+                </code></pre>
+
+                <p>
+                    This is a major improvement from just using 1 single noise map to shape the terrain. Planets can now
+                    have more intricated surfaces.
+                </p>
+
+                <img src="../media/planet/fractal_noise_implementation.png" alt="Fibonacci sphere"
+                    style="max-width: 100%; height: auto;" loading="lazy" decoding="async"><br>
+
+                <p>
+                    To stay structured, I moved all these new config settings to data assets so they can be saved and
+                    swapped in/out to create different planets.
+                </p>
+
+                <img src="../media/planet/data_asset.png" alt="Fibonacci sphere" style="max-width: 100%; height: auto;"
+                    loading="lazy" decoding="async"><br>
+
+                <p>
+                    Lastly for this stage, to add some colors to the planet, I can fake it with a distance based shader.
+                    I used the custom node inside the material graph to write my own HLSL code because that was way
+                    easier than trying to make it work with the built-in nodes that are available.
+                </p>
+
+                <pre><code class="language-hlsl">
+float dist = length(WorldPos - PlanetCenter); // Calculate distance to center of planet.
+float height = (dist - PlanetRadius) / (PlanetRadius * ColorSpread); // Calculate planet height.
+
+// Height based colors from water all the way to snow.
+float3 oceanColor = float3(0.05, 0.25, 0.55);
+float3 sandColor  = float3(0.76, 0.70, 0.50);
+float3 grassColor = float3(0.20, 0.45, 0.15);
+float3 rockColor  = float3(0.40, 0.35, 0.30);
+float3 snowColor  = float3(0.95, 0.95, 0.95);
+
+float3 color = oceanColor; // Start at the ocean color.
+
+// Smoothly lerp the color based on the height.
+color = lerp(color, sandColor,  smoothstep(0.00, 0.05, height));
+color = lerp(color, grassColor, smoothstep(0.05, 0.15, height));
+color = lerp(color, rockColor,  smoothstep(0.30, 0.50, height));
+color = lerp(color, snowColor,  smoothstep(0.60, 0.80, height));
+
+return color;
+</code></pre>
+
+                The result of this function is plugged straight into the base color value of the material, resulting in
+                some simple terrain coloring:
+
+                <img src="../media/planet/planet_material_showcase.png" alt="Fibonacci sphere"
+                    style="max-width: 100%; height: auto;" loading="lazy" decoding="async"><br>
+
+
+                <h2 id="optimizing">Optimizing the mesh</h2>
+
 
                 <!-- <pre><code class="language-cpp">// Code blocks: set the language class and the autoloader fetches it
 int main() { return 0; }</code></pre> -->
