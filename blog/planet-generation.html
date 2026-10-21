@@ -289,9 +289,11 @@ FVector3f UShapeGenerator::CalculatePointOnPlanet(FVector3f pointOnSphere)
 }
                 </code></pre>
 
-                The same percentage is reused as the UV coordinate. Finally, for every vertex that isn't on
-                the last row or column, two triangles are created to form a quad with its neighbors to the right
-                and below.
+                <p>
+                    The same percentage is reused as the UV coordinate. Finally, for every vertex that isn't on
+                    the last row or column, two triangles are created to form a quad with its neighbors to the right
+                    and below.
+                </p>
 
                 <pre><code class="language-cpp">
 // Create triangles.
@@ -310,6 +312,32 @@ if (x != resolution - 1 && y != resolution - 1)
 
 
                 <h2 id="noise">Adding noise</h2>
+
+                <p>
+                    Now that the tool can generate modifiable spheres, the next step is to apply some 3D noise to the
+                    surface to make it look a little more interesting. To keep the generation framework flexible and
+                    less tightly coupled, I made the <code>NoiseFilter</code> class, specifically used for sampling and
+                    applying noise. This class uses the built-in 3D perlin noise functions from the <code>FMath</code>
+                    dependency.
+                </p>
+
+                <pre><code class="language-cpp">
+float UNoiseFilter::EvaluateNoise(FVector3f point)
+{
+    float noise = (FMath::PerlinNoise3D(FVector(point)) + 1) * .5f;
+    return noise;
+}
+</code></pre>
+
+
+                <pre><code class="language-cpp">
+FVector3f UShapeGenerator::CalculatePointOnPlanet(FVector3f pointOnSphere)
+{
+    return pointOnSphere * planetRadius;
+    float terrainHeight = shapeGenerator->EvaluateNoise(pointOnSphere);
+    return pointOnSphere * planetRadius * (1 + terrainHeight);
+}
+</code></pre>
 
                 <!-- <pre><code class="language-cpp">// Code blocks: set the language class and the autoloader fetches it
 int main() { return 0; }</code></pre> -->
