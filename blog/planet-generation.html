@@ -759,6 +759,319 @@ bool Quadtree::ShouldSplit(const FQuadTreeLODConfig& settings, const FVector3f& 
                     style="max-width: 100%; height: auto;"></video>
 
                 <h2 id="biome">Biome generation</h2>
+
+                <p>
+                    I started researching how other people tackled this. A frequently used technique to quickly get some
+                    sort of biomes is generating biomes depending on the height of the terrain (the raw noise values).
+                </p>
+
+                <img src="../media/planet/raw_noise_based_biomes.png" alt="raw_noise_based_biomes"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Generating Biomes in a Procedural
+                    World - Alex K.</p>
+
+                <p>
+                    This works fine, but there are a couple problems. The biomes are quite predictible because the same
+                    biomes will always generate on certain heights. Also, there is not much room to add different biomes
+                    because adding biomes will result in ring shapes because the terrain is derived from the intensity
+                    (height) output of the noise, leaving little room.
+                </p>
+
+                <p>
+                    Voronoi noise is a much better solution, depending on the distribution of points, the biomes are
+                    spread around much more interestingly.
+                </p>
+
+                <img src="../media/planet/voronoi_based_biomes.png" alt="voronoi_based_biomes"
+                    style="max-width: 75%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Voronoi biome generation - iph0.
+                </p>
+
+                <p>
+                    They do have sharp borders, but that can be mitigated by applying some type of smoothing along the
+                    borders. This in combinations with a Perlin temperature and/or humidity noise map, can generate hot,
+                    temperate and cold biomes in a somewhat realistic manner.
+
+                </p>
+
+                <img src="../media/planet/raw_voronoi_noise.png" alt="raw_noise_based_biomes"
+                    style="max-width: 75%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+
+                <p>
+                    <br>Another important consideration will be deciding if i want my terrain to shape the biomes or if
+                    the biomes should shape the terrain. When the terrain shapes the biomes, the biomes are more a
+                    afterthought, where terrain is generated first and then the system asks "which biome fits on this
+                    terrain?".
+                </p>
+
+                <p>
+                    When biomes shape the terrain, the terrain is an afterthought, the biomes are generated first and
+                    based on the biomes, different terrain shapers make terrain.
+                </p>
+
+                <div style="overflow-x:auto">
+                    <table>
+                        <caption>Terrain shapes the biomes</caption>
+                        <thead>
+                            <tr>
+                                <th>Pros</th>
+                                <th>Cons</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Easier to implement, instead of making multiple "shapers" for every biome type, the
+                                    system
+                                    just has a global one and paints biomes afterwards.</td>
+                                <td>Iterating is worse because when tweaking terrain in order for example to make a
+                                    forest biome
+                                    generate higher up (altitude), the forest biome disappears because forest biomes
+                                    spawn on a
+                                    lower altitude.</td>
+                            </tr>
+                            <tr>
+                                <td>Easy to blend biomes together since there are no huge changes in the terrain
+                                    manipulation.</td>
+                                <td>Works much better when having lots of biomes to choose from to create a smooth
+                                    blending.</td>
+                            </tr>
+                            <tr>
+                                <td>Better performance, only one shape generator needs to evaluate noise.</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="overflow-x:auto">
+                    <table>
+                        <caption>Biomes shape the terrain</caption>
+                        <thead>
+                            <tr>
+                                <th>Pros</th>
+                                <th>Cons</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Works well even with just a few biomes.</td>
+                                <td>Has visible artifacts on borders of biomes because every biome has its own shape
+                                    generator.</td>
+                            </tr>
+                            <tr>
+                                <td>Much more "editable" friendly. When tweaking the biome params, there is no risk of
+                                    biomes
+                                    disappearing entirely and makes editing terrain also easier.</td>
+                                <td>Runs much slower, because the noise has to be evaluated multiple times in order to
+                                    blend the
+                                    biomes together and fix artifacts that happen on the borders.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>
+                    For my implementation, I wanted to to try lean more that biomes shape the terrain. I prefer this
+                    method more because I didn't want to have a lot of biomes for the planets. I would like to keep it
+                    within scope.
+
+                    Therefore, biome shaping should work better in this instance. The only problems are, that the
+                    current terrain shaper might need a rework since the terrain is shaped first at this moment and I
+                    might need to deal with those artifacts on the biome borders. I think these problems are fixable
+                    though.
+                </p>
+
+                <p>
+
+                    Since the planets are spherified cubed, the planet has 6 distinctive sides that are planes. I could
+                    project Voronoi/Worley noise to each side. This solves the problem of trying to map one huge
+                    noise map to the whole planet.
+                </p>
+
+
+                <img src="../media/planet/biome_generation_strategy_doodle.png" alt="biome_generation_strategy_doodle"
+                    style="max-width: 50%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+
+                <p>
+
+                    However, I realized this wasn't really is the best solution because this will cause major artifacts
+                    on the edge borders. Instead I am planning to sample biome noise based on a Fibonacci sphere since
+                    the terrain noise is evaluated separately from the rest of the generation pipeline.
+                </p>
+
+
+                <img src="../media/planet/fib_sphere.png" alt="biome_generation_strategy_doodle"
+                    style="max-width: 50%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+                <p>
+                    <br>Fibonacci sphere distribution is a technique that uses the golden rule and ratio to plot points
+                    on a sphere with even distribution. Since there is no built-in Worley/Voronoi noise, I am going to
+                    "warp" (apply 3D noise) to these points to simulate a Voronoi type noise cells.
+                </p>
+
+                <pre><code class="language-cpp">
+// Fibonacci sphere, Z is the pole axis.
+const float goldenAngle = PI * (3.f - FMath::Sqrt(5.f));
+
+for (int32 i = 0; i < shapeSettings.biomeCellCount; i++)
+{
+	const float z = 1.f - (i + 0.5f) / shapeSettings.biomeCellCount * 2.f;
+	const float r = FMath::Sqrt(1.f - z * z);
+	const float theta = goldenAngle * i;
+
+	FVector3f point(FMath::Cos(theta) * r, FMath::Sin(theta) * r, z);
+	point += FVector3f(rng.GetUnitVector()) * shapeSettings.biomeJitter;
+	cellCenters[i] = point.GetSafeNormal();
+
+	// Choose biome.
+}
+</code></pre>
+
+                <p>
+                    This technique works really well for distributing points on the surface of a sphere with even
+                    distribution. I do this because I am essentially creating my own type of Voronoi noise, Unreal
+                    doesn't have a built-in way to sample Voronoi noise in c++ so what I ended up doing is adding some
+                    random noise to these points and kind of warp them until a Voronoi-type noise is created.
+                </p>
+
+                <!-- <p>
+                    <br>The actually implement this into the planet generation workflow, the main terrain generation
+                    needed to be reworked so that the biomes shape the terrain, not terrain shaping
+                    the biomes.
+                </p> -->
+
+                <p>
+                    Using a data asset, the user can easily maintain and tweak values like the amount of biome cells to
+                    generate or the amount of jitter on the distributed points (warp intensity).
+
+                    <br><br>When constructing the surface of planets in my main <code>ShapeGenerator.cpp</code>, the
+                    biomes get sampled using weights for every biome.
+                </p>
+
+                <pre><code class="language-cpp">
+struct FBiomeWeights
+{
+    float weight[(int32)EBiome::Count] = {0.f, 0.f, 0.f};
+    float Get(EBiome biome) const { return w[(int32)biome]; }
+};
+                </code></pre>
+
+                <p>
+                    When sampling, the biome weights get populated based on the earlier distributed points on the
+                    planet.
+                </p>
+
+                <pre><code class="language-cpp">
+// Blending biome results.
+for (int32 i = 0; i < cellCenters.Num(); i++)
+{
+	const float dot = FVector3f::DotProduct(pointOnSphere, cellCenters[i]);
+	const float biomeWeight = FMath::Exp((dot - bestDot) * shapeSettings.borderSharpness);
+
+	result.w[(int32)cellBiomes[i]] += biomeWeight;
+}
+</code></pre>
+
+                <p>
+                    Then these weights get added to the total height, which is the base height (noise height that's
+                    separate from biomes) and the biome specific height.
+                </p>
+
+                <pre><code class="language-cpp">
+FPlanetSample UShapeGenerator::CalculatePointOnPlanet(FVector3f pointOnSphere)
+{
+	if (shapeSettings == nullptr)
+		return {};
+
+	FPlanetSample result;
+	result.biomeWeights = biomeGenerator->Sample(pointOnSphere, *shapeSettings);
+
+	// Sum up terrain height from all base terrain layers.
+	float height = EvaluateLayers(shapeSettings->noiseLayers, pointOnSphere);
+
+	for (int32 i = 0; i < (int32)EBiome::Count; i++)
+	{
+		const float w = result.biomeWeights.w[i];
+
+		if (w > 0.001f) // Sum up base terrain height and biome specific terrain height.
+			height += w * EvaluateLayers(shapeSettings->GetBiome((EBiome)i).detailLayers, pointOnSphere);
+	}
+
+	result.height = height;
+	result.position = pointOnSphere * GetPlanetRadius() * (1.f + height); // Scale planet up to desired radius.
+	return result;
+}
+</code></pre>
+
+                <p>
+                    With all this, the user can tweak the noise values of the specific biomes and as a result the biomes
+                    shape the terrain instead of the terrain being generated first with the biomes being painted over
+                    the terrain as an after thought.
+
+                    <br><br>Then when construction the mesh for the terrain, I paint the vertices based on the biome.
+                </p>
+
+                <pre><code class="language-cpp">
+// Get the sample with the biomeweights.
+const FPlanetSample sample = shapeGenerator->CalculatePointOnPlanet(pointOnUnitCube);
+
+// Inside loop..
+
+const int32 i = x + y * resolution; // Calculate correct index.
+
+vertices[i] = FVector(sample.position);
+uVs[i] = FVector2D(percent.X, percent.Y);
+
+colors[i] = FLinearColor // Create color buffer using the biomeweights.
+(
+	sample.biomeWeights.Get(EBiome::Cold),
+	sample.biomeWeights.Get(EBiome::Temperate),
+	sample.biomeWeights.Get(EBiome::Hot),
+	sample.height
+);
+</code></pre>
+
+                <p>
+                    Finally, the mesh gets eather upated or created with the correct vertex color.
+                </p>
+
+                <pre><code class="language-cpp">
+if (createNewMesh)
+{
+	targetMesh->CreateMeshSection_LinearColor(sectionIndex, vertices, triangles, normals, uVs,
+			                                          colors, tangents, false, false);
+}
+else // If the mesh does not have to be generated from scratch, only update it.
+{
+	targetMesh->UpdateMeshSection_LinearColor(sectionIndex, vertices, normals, uVs, colors, tangents, false);
+}
+</code></pre>
+
+                <p>
+                    When plugging the vertex color directly into the base color of the material, this debug view can be
+                    seen. All biomes have their distinctive color range.
+                </p>
+
+                <img src="../media/planet/vertex_color_debug_view.png" alt="vertex_color_debug_view"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+
+                <p>
+                    <br>Then I can override the biome colors in the material grahp using this custom shader node. Which
+                    blends height coloring with my biome override colors.
+                </p>
+
+                <img src="../media/planet/correct_biome_based_coloring.png" alt="correct_biome_based_coloring"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+
+                <p>
+                    <br>Planet result:
+                </p>
+
+                <img src="../media/planet/correct_biome_based_coloring_planet.png"
+                    alt="correct_biome_based_coloring_planet"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+
                 <h2 id="scatter">PCG Terrain scattering</h2>
 
                 <h2 id="references">References</h2>
