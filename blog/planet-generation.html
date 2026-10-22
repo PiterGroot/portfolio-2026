@@ -71,6 +71,7 @@
                     <li><a href="#showcase">Showcase</a></li>
                     <li><a href="#genproc_sphere">Procedurally generating a sphere</a></li>
                     <li><a href="#noise">Adding noise</a></li>
+                    <li><a href="#optimizing">Optimizing the mesh</a></li>
                     <li><a href="#references">References</a></li>
                 </ul>
 
@@ -117,8 +118,9 @@
                 </p>
 
 
-                <img src="../media/planet/cube_sphere.png" alt="Cube sphere" style="max-width: 100%; height: auto;"
-                    loading="lazy" decoding="async"><br>
+                <img src="../media/planet/cube_sphere.png" alt="Cube sphere"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy"
+                    decoding="async"><br>
 
                 A cubified sphere simply starts as a normal cube. Then by pulling its vertices toward its center, it
                 will become a nice sphere mesh.
@@ -152,8 +154,9 @@
                     </table>
                 </div>
 
-                <img src="../media/planet/icosphere.png" alt="icosphere" style="max-width: 100%; height: auto;"
-                    loading="lazy" decoding="async"><br>
+                <img src="../media/planet/icosphere.png" alt="icosphere"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy"
+                    decoding="async"><br>
 
                 The Icosphere (icosahedron) has twenty sides so it provides the most even vertex distribution of all the
                 options.
@@ -183,8 +186,9 @@
                     </table>
                 </div>
 
-                <img src="../media/planet/fib_sphere.png" alt="Fibonacci sphere" style="max-width: 100%; height: auto;"
-                    loading="lazy" decoding="async"><br>
+                <img src="../media/planet/fib_sphere.png" alt="Fibonacci sphere"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy"
+                    decoding="async"><br>
 
                 Using the golden ratio, points are plotted almost evenly across the surface of an imaginary sphere using
                 the golden ratio and spiral patterns.
@@ -229,7 +233,8 @@
                 </p>
 
                 <img src="../media/planet/cube_sphere_unreal.png" alt="Fibonacci sphere"
-                    style="max-width: 100%; height: auto;" loading="lazy" decoding="async"><br>
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy"
+                    decoding="async"><br>
 
                 <p>
                     The sphere is built out of six separate faces, one for each side of the original cube. Every face
@@ -418,8 +423,9 @@ float UNoiseFilter::EvaluateNoise(FVector3f point, FNoiseSettings noiseSettings)
                     swapped in/out to create different planets.
                 </p>
 
-                <img src="../media/planet/data_asset.png" alt="Fibonacci sphere" style="max-width: 100%; height: auto;"
-                    loading="lazy" decoding="async"><br>
+                <img src="../media/planet/data_asset.png" alt="Fibonacci sphere"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy"
+                    decoding="async"><br>
 
                 <p>
                     Lastly for this stage, to add some colors to the planet, I can fake it with a distance based shader.
@@ -455,13 +461,49 @@ return color;
                 <img src="../media/planet/planet_material_showcase.png" alt="Fibonacci sphere"
                     style="max-width: 100%; height: auto;" loading="lazy" decoding="async"><br>
 
-
                 <h2 id="optimizing">Optimizing the mesh</h2>
 
+                <p>
+                    Up until this point, the planets showcased were all very small (less than 200 units in diameter).
+                    One unit in Unreal is one centimeter. Some extra work is needed to achieve the project goal of being
+                    able to handle huge planets with an appropriate resolution.<br><br>
 
-                <!-- <pre><code class="language-cpp">// Code blocks: set the language class and the autoloader fetches it
-int main() { return 0; }</code></pre> -->
+                    If I try to generate a planet that is that huge with a high level of detail on the current setup, it
+                    starts to take multiple <strong>seconds</strong> instead of milliseconds. Which becomes detrimental
+                    for iteration speed:
+                </p>
+
+                <video src="../media/planet/planet_long_generating_duration.mp4" controls loop preload="metadata"
+                    playsinline style="max-width: 100%; height: auto;"></video>
+
+                <h2 id="CDLOD">CDLOD</h2>
+                <p>
+                    While researching techniques to efficiently render large terrain, I came across many YouTube videos
+                    referencing a technique called CDLOD. That's how I came across the paper (Strugar, 2010) in which,
+                    Filip explains and showcases a technique for "GPU-based rendering of heightmap terrains".
+                </p>
+
+                <img src="../media/planet/cdlod_diagram.png" alt="Fibonacci sphere"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy"
+                    decoding="async"><br>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">CDLOD Terrain | Svante Lindgren
+                    2020-06-13</p>
+
+                <p>
+                    Fixed sized grids and quadtrees are the building blocks of this technique. Quadtree are rebuilt
+                    every frame, after rebuilding the tree gets recursively subdivided around the position of the
+                    observer (usually the camera) while also taking into account the distance from the nodes.
+
+                </p>
+
+
+
             </div>
+
+            <h2 class="references">
+                https://svnte.se/cdlod-terrain
+
+            </h2>
         </article>
     </div>
 
