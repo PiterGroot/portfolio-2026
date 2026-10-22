@@ -62,23 +62,17 @@
                     Space games have always intrigued me. Specifically titles like Elite Dangerous, Outer Wilds and
                     Kerbal Space Program. That's why, as part of my university assignment, I researched and developed a
                     tool inside Unreal 5 to generate planets. Not just small "gamified" planets, but planets with huge
-                    scales nearing real-life sizes.
+                    scales nearing real-life sizes.<br><br>
+
+                    Below is a video showcasing the generator in action, generating and updating a planet (same size of
+                    the earth) with some exaggerated noise, biomes and terrain scattering. Quality of the terrain is
+                    dynamically adjusted using the LOD system based on the distance of the camera.
                 </p>
 
-                <h2 style="margin-bottom: 12px;">Table of Contents</h2>
-                <ul style="margin-bottom: 40px; line-height: 1.8;">
-                    <li><a href="#introduction">Introduction</a></li>
-                    <li><a href="#showcase">Showcase</a></li>
-                    <li><a href="#genproc_sphere">Procedurally generating a sphere</a></li>
-                    <li><a href="#noise">Adding noise</a></li>
-                    <li><a href="#optimizing">Optimizing the mesh</a></li>
-                    <li><a href="#references">References</a></li>
-                </ul>
-
-                <h2 id="showcase">Showcase</h2>
+                <video src="../media/planet/planet_showcase.mp4" controls loop preload="metadata" playsinline
+                    style="max-width: 100%; height: auto;"></video>
 
                 Here is the complete feature list implemented in the final product:
-
                 <p>
                 <ul>
                     <li><strong>Scale:</strong> Able to generate huge planets using real-life planetary
@@ -100,13 +94,17 @@
                 </ul>
                 </p>
 
-                <video src="../media/planet/planet_showcase.mp4" controls loop preload="metadata" playsinline
-                    style="max-width: 100%; height: auto;"></video>
 
-                <p style="text-align: center; font-size: smaller; font-style: italic;">Video showcasing planet (same
-                    size of the earth) with some exaggerated noise, biomes and terrain scattering. Quality of the
-                    terrain is dynamically adjusted using the LOD system based on the distance of the camera.</a>
-                </p>
+                <h2 style="margin-bottom: 12px;">Table of Contents</h2>
+                <ul style="margin-bottom: 40px; line-height: 1.8;">
+                    <li><a href="#introduction">Introduction</a></li>
+                    <li><a href="#genproc_sphere">Procedurally generating a sphere</a></li>
+                    <li><a href="#noise">Adding noise</a></li>
+                    <li><a href="#optimizing">Optimizing the mesh</a></li>
+                    <li><a href="#quadtree">Quadtree</a></li>
+                    <li><a href="#lod">LOD system</a></li>
+                    <li><a href="#references">References</a></li>
+                </ul>
 
                 <h2 id="genproc_sphere">Procedurally generating a sphere</h2>
                 <p>
@@ -593,12 +591,180 @@ bool Quadtree::Insert(Point& point)
                 <p style="text-align: center; font-size: smaller; font-style: italic;">Quadrant experiment ported over
                     to Unreal 5.8.</p>
 
-            </div>
+                <P>
+                    At first I wasn't sure how to adapt the quadtree to be able to work with terrain instead of being
+                    capacity-based as shown in the experiment above. After some further researching I came across a
+                    fantastic video series by SimonDev "3D world generation", specifically episode 3 "3D World
+                    Generation: #3 (Quadtree & LOD)" where he explained how quadtrees can be used for a terrain LOD
+                    system (exactly the piece I wasn't sure about).
 
-            <h2 id="references">
+                </P>
+
+                <p>
+                    These videos in combination with Filip's paper and the basic quadtree implementation experiment
+                    helped my understand how it all should come together. <br><br>
+
+                    A few changes were needed to make it actually
+                    work for my application which is terrain rendering. Instead of subdividing the quadtree based on a
+                    "capacity", it needs to recursively subdivide around the area based on an observer (which in this
+                    case is the camera) until the minimum node size has been reached.
+
+                </p>
+
+                <pre><code class="language-cpp">
+void Quadtree::ReBuild(const FQuadTreeLODConfig& settings, const FVector3f& observerLocation)
+{
+	if (ShouldSplit(settings, observerLocation))
+	{
+		if (!divided)
+			Subdivide();
+
+		childNw->ReBuild(settings, observerLocation);
+		childNe->ReBuild(settings, observerLocation);
+		childSw->ReBuild(settings, observerLocation);
+		childSe->ReBuild(settings, observerLocation);
+	}
+	else
+	{
+		Clear();
+	}
+}
+</code></pre>
+
+                <p>
+                    Running this, makes it more clear how this can be applied to a terrain mesh. The nodes around the
+                    "camera" are subdivided recursively, resulting in getting more details up close to the screen and
+                    discarding the quality of far away nodes.
+                </p>
+
+                <img src="../media/planet/observer-quadtree.gif" alt="observer_quadtree_ue"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+
+                <h2 id="lod">LOD system</h2>
+
+                <p>
+                    The quadtree was now working inside unreal, it only had to be actually implemented into the
+                    planet generation workflow in terms of an Level of Detail (LOD) system. I ended up with the
+                    following workflow: <br><br>
+
+                    Every planet is a cube sphere: six faces, each with its own quadtree. Every LOD update follows the
+                    same flow: find the observer (the main camera), rebuild each face's quadtree around it, collect the
+                    leaves, and only build mesh chunks for leaves that didn't exist in the previous update.
+                </p>
+
+                <img src="../media/planet/lod_update_flow_diagram.png" alt="observer_quadtree_ue"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+
+                <p>
+                    <br>Each leaf gets a unique <code>uint64</code> key, packed from its depth and grid position.
+                    Comparing the new leaf keys against the previous update gives three cases:
+
+                <ul>
+                    <li>
+                        Chunks that stayed the same are left alone.
+                    </li>
+                    <li>
+                        Chunks that disappeared are hidden and their mesh section index goes back into
+                        a pool.
+                    </li>
+                    <li>
+                        Only chunks that appeared are generated, reusing a pooled section when one is available. This
+                        way a
+                        camera movement only regenerates the part of the planet that actually changed LOD, instead of
+                        the
+                        whole mesh.
+                    </li>
+                </ul>
+
+                </p>
+
+                <pre><code class="language-cpp">
+void APlanet::UpdateLod()
+{
+	if (!GetLODActorLocation(LODReferenceLocation))
+	{
+		// No valid camera available, assume the location is very far away so the planet still gets its lowest LOD.
+		const float radius = shapeSettings ? shapeSettings->planetRadius : 1.0f;
+		LODReferenceLocation = GetActorLocation() + FVector(0.0, 0.0, 100.0 * radius);
+	}
+
+	// Convert the observer to the planet's local space, so LOD still works when the planet moves or rotates.
+	const FVector3f observerLocal = FVector3f(GetActorTransform().InverseTransformPosition(LODReferenceLocation));
+
+	// The sphere is a cube sphere, so it has 6 different sides, each with its own quadtree.
+	for (int32 faceIndex = 0; faceIndex < 6; faceIndex++)
+	{
+		// Get the quadtree and rebuild it around the observer.
+		Quadtree* root = faceQuadtrees[faceIndex].Get();
+		root->ReBuild(CreateLodSettings(faceIndex), observerLocal);
+
+		// Query all quadtree leaves (nodes without children). Each leaf becomes one mesh chunk.
+		TArray<Quadtree*> leaves;
+		root->GetLeaves(leaves);
+
+		// Collect chunks that need to be changed, recycle old ones in the pool.
+
+		// Build only the chunks that appeared. Chunks that remain this rebuild are left untouched.
+		for (const TPair<uint64, Quadtree*>& chunk : desiredChunks)
+		{
+			// Check if a node has to be created from scratch or not.
+
+			// Construct chunk using the section index for the new desired chunk.
+			sphereFaces[faceIndex].ConstructChunk(sectionIndex, chunk.Value->GetUvMin(), chunk.Value->GetUvMax(), bCreateNew);
+
+			// If chunk was new, assign planet material.
+		}
+	}
+}
+</code></pre>
+
+                <p>
+                    The tree is then rebuilt from the root on every update (when the camera moves). Updating the tree is
+                    luckily quite cheap because there is only one observer (the camera). Nodes close to the
+                    observer keep subdividing, and nodes that moved out of range collapse their whole subtree back into
+                    a single leaf (node without any children). Existing children are kept when a node stays divided, so
+                    the tree isn't recreated from scratch each frame.
+                </p>
+
+                <pre><code class="language-cpp">
+bool Quadtree::ShouldSplit(const FQuadTreeLODConfig& settings, const FVector3f& referencePosition) const
+{
+	// Hard cap on recursion depth, as a safety net against runaway subdivision.
+	if (recursiondepth >= settings.maxDepth)
+		return false;
+
+	const float nodeSize = GetNodeWorldSize(settings);
+
+	// Stop once the children would become smaller than the minimum chunk size.
+	if (nodeSize * 0.5f < settings.minQuandrantSize)
+		return false;
+
+	// A node splits when the observer is within a distance proportional to its size.
+	const float splitDistance = nodeSize * settings.lodDistanceFactor;
+	return DistanceSquaredToObserver(settings, referencePosition) < splitDistance * splitDistance;
+}
+</code></pre>
+
+                <p>
+                    The split (subdivide) logic makes the LOD ranges scale with node size: large nodes split from far
+                    away, small nodes only split up close. <code>lodDistanceFactor</code> influences how aggressive this
+                    is.<br><br>
+
+                    The distance is measured to the closest of the node's four corners and its center, evaluated on the
+                    actual noise-displaced surface rather than the flat cube face. This keeps mountains from being
+                    treated as further away than they are. Comparing squared distances avoids a square root per node.
+                </p>
+
+                <video src="../media/planet/planet_lod_system.mp4" controls loop preload="metadata" playsinline
+                    style="max-width: 100%; height: auto;"></video>
+
+                <h2 id="biome">Biome generation</h2>
+                <h2 id="scatter">PCG Terrain scattering</h2>
+
+                <h2 id="references">References</h2>
                 https://svnte.se/cdlod-terrain
 
-            </h2>
+            </div>
         </article>
     </div>
 
