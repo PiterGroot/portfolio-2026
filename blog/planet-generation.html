@@ -484,8 +484,7 @@ return color;
                 </p>
 
                 <img src="../media/planet/cdlod_diagram.png" alt="Fibonacci sphere"
-                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy"
-                    decoding="async"><br>
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
                 <p style="text-align: center; font-size: smaller; font-style: italic;">CDLOD Terrain | Svante Lindgren
                     2020-06-13</p>
 
@@ -494,13 +493,109 @@ return color;
                     every frame, after rebuilding the tree gets recursively subdivided around the position of the
                     observer (usually the camera) while also taking into account the distance from the nodes.
 
+
+                    CDLOD eliminates traditional artifacts by transforming the "mesh of a higher level into the lower
+                    detailed one before the actual swap occurs. This ensures a perfectly smooth transition with no seams
+                    or artifacts".
+
+                </p>
+
+                <h2 id="quadtree">Quadtree</h2>
+
+
+                <p>
+                    A quadtree is a tree data structure that recursively splits a 2D plane into four child
+                    quadrants (NorthWest, NorthEast, SouthWest, and SouthEast). "Points" can be inserted into this
+                    structure and depending on the implementation, the quadtree can efficiently query points inside a
+                    specific area without having to loop over all points to check.
+
+                </p>
+                <img src="../media/planet/search-quadtree-circle.png" alt="search-quadtree"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Quadtrees #2: Implementation in
+                    Python | <a
+                        href="https://scipython.com/blog/quadtrees-2-implementation-in-python/">scipython.com</a></p>
+
+                <p>
+                    A quadtree can be capacity based for example, which means that the tree recursively splits
+                    up when the amount of points inside a quadrant exceeds the predefined capacity. Resulting into many
+                    tree divisions near areas where a lot of points are. In the real world, this would most likely be
+                    used for something like collision detections where the system needs to check if objects are
+                    overlapping/colliding.
+
                 </p>
 
 
+                <p>
+                    To start implementing CDLOD for my planet generator I had to start with quadtrees but at that point
+                    I was only really aware about the name (Quadtrees) but had absolutely no clue how they worked and
+                    how they could be used. That's why I decided to first try and implement the most basic version in a
+                    standalone c++ project.
+                </p>
+
+                <img src="../media/planet/capacity-quadtree.gif" alt="search-quadtree"
+                    style="max-width: 65%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Quadrants with lots of
+                    points have more subdivision. The capacity was set to 2 points per quadrant.</p>
+
+                <p>
+                    <br>In this example there are 300 points inserted in the quadtree. On the first frame, the quadtree
+                    is built which means it subdivides based on the points plotted in the tree. Instead of having to
+                    check all 300 points to see which ones are in my query area (green
+                    rectangle), only a fraction of those total points needed to be checked, dramatically reducing the
+                    the number of checks needed for the result.
+                </p>
+
+                <p>
+                    In terms of code, when a point gets inserted, the root node (top most node in the tree structure)
+                    recursively goes over any quadrants it needs to make sure that the point goes into a quadrant where
+                    no subdivision is needed.
+                </p>
+
+                <pre><code class="language-cpp">
+bool Quadtree::Insert(Point& point)
+{
+    // Only continue if the point is inserted into this quadrants boundary.
+	if (!boundary.Contains(point)) 
+		return false;
+
+    // If this new point doesn't exceeds the capacity, add it to this quadrant and return true.
+	if (points.size() < capacity)
+	{
+		points.push_back(point);
+		return true;
+	}
+	else
+	{
+        // If this quadrant is a leaf node (node without children) it can subdivide.
+		if (!divided) 
+			Subdivide();
+
+        //Resursively insert point untill a point is successfully inserted somewhere.
+		if (childNw->Insert(point)) return true;
+		else if (childNe->Insert(point)) return true;
+		else if (childSe->Insert(point)) return true;
+		else if (childSw->Insert(point)) return true;
+	}
+
+	return false;
+}
+</code></pre>
+
+                <p>
+                    This little experiment was vital for my understanding on the actual applications for quadtrees. This
+                    was then quite easily ported to unreal, the only parts I had to swap out, were `std::vectors` for
+                    Unreal's `TArray` and the debug drawing.
+                </p>
+
+                <img src="../media/planet/capacity_quadtree_ue.png" alt="capacity_quadtree_ue"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Quadrant experiment ported over
+                    to Unreal 5.8.</p>
 
             </div>
 
-            <h2 class="references">
+            <h2 id="references">
                 https://svnte.se/cdlod-terrain
 
             </h2>
