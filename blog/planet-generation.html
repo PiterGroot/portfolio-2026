@@ -1008,9 +1008,11 @@ FPlanetSample UShapeGenerator::CalculatePointOnPlanet(FVector3f pointOnSphere)
 </code></pre>
 
                 <p>
-                    With all this, the user can tweak the noise values of the specific biomes and as a result the biomes
-                    shape the terrain instead of the terrain being generated first with the biomes being painted over
-                    the terrain as an after thought.
+                    <br>I find this very exiting because with all this, the user can tweak the noise values of the
+                    specific biomes and as a result the
+                    biomes shape the terrain instead of the terrain being generated first with the biomes being painted
+                    over the terrain as an after thought. Deserts for example can be smooth and hilly while cold biomes
+                    could be sharp and pointy.
 
                     <br><br>Then when construction the mesh for the terrain, I paint the vertices based on the biome.
                 </p>
@@ -1073,6 +1075,9 @@ else // If the mesh does not have to be generated from scratch, only update it.
 
                 <img src="../media/planet/logo_square.png" alt="correct_biome_based_coloring_planet"
                     style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Example planet with smooth hilly
+                    deserts, mountainous hills and peaks and rough ice poles.
+                </p>
 
                 <h2 id="scatter">PCG Terrain scattering</h2>
 
@@ -1102,10 +1107,23 @@ else // If the mesh does not have to be generated from scratch, only update it.
                 <p>
                     After some more digging I found a reddit forum post about this specific topic. A user answered the
                     question of creating custom PCG nodes in c++ with that the class <code>UPCGSettings</code> can be
-                    inherited from. That was exactly the solution I needed so I started writing my own custom PCG node.
-                    Starting simple by trying to distribute points over a uniform planet (sphere) without any noise.
+                    inherited from.
 
-                    <br><br>To distribute the points I made use of Unreal's built-in <code>RandomStream</code> which is
+                </p>
+
+                <p>
+                    That was exactly the solution I needed so I started writing my own custom PCG node, the
+                    <code>PCGSphereSurfaceSampler.cpp</code>. This custom node samples my planets and distributes points
+                    directly from the planet's internal shape generator. Everything after that (filtering per biome and
+                    spawning meshes) is done with built-in PCG nodes inside a PCG graph. This means the props for each
+                    biome can be changed without touching any code.
+                </p>
+
+                <img src="../media/planet/initial_pcg_graph.png" alt="pcg points"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+
+                <p>
+                    <br>To distribute the points I made use of Unreal's built-in <code>RandomStream</code> which is
                     a seeded random generator with very even distribution:
                 </p>
 
@@ -1153,12 +1171,12 @@ for (int32 i = 0; i < NumPoints; ++i)
                     instead of plotting cells based on the size and center of the planet, to use the internal point
                     calculation <code>CalculatePointOnPlanet(pointOnSphere)</code> from my <code>ShapeGenerator</code>
                     that is also used by the actual mesh generation of the planets.
+                </p>
 
-                    <br><br>
-                    This meant that because of this, the points get the exact terrain height the terrain uses. It also
-                    doesn't matter whether the chunk underneath has been built yet, or at which LOD level it is, it will
-                    always correctly calculate the correct "altitude" for the PCG point.
-
+                <p>
+                    This meant that because of this, the points get the exact terrain height the terrain uses. It
+                    also doesn't matter whether the chunk underneath has been built yet, or at which LOD level it is, it
+                    will always correctly calculate the correct "altitude" for the PCG point.
                 </p>
 
                 <pre><code class="language-cpp">
@@ -1231,6 +1249,76 @@ void APlanet::RegeneratePCG()
                     This solution finally fixed the issue, the PCG models now were updating correctly after changing the
                     planet settings to make it look different.
                 </p>
+
+                <p>
+                    Now that I could spawn these a huge number of terrain props on the planet, the next step was to add
+                    the ability to make the spawning of these pieces biome depended. The planets can currently have
+                    Cold, Hot and Temperate biomes.
+
+                    <br><br>I ended up using <code>PCG Attribute Sets</code> for this.
+                </p>
+
+                <img src="../media/planet/custom_pcg_workflow_diagram.png" alt="pcg points"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+
+                <p>
+                    <br>Each point is encoded with its respective biome using attribute metadata. The attributes are
+                    created once per execution: one <code>int32</code> for the dominant biome, and one
+                    <code>float</code> per biome weight. Each point then gets the index of the biome with the highest
+                    weight.
+                </p>
+
+                <pre><code class="language-cpp">
+FPCGMetadataAttribute<int32>* biomeAttribute =
+    metadata->CreateAttribute<int32>(TEXT("Biome"), 0, false, false);
+
+// Per point: the biome with the highest weight wins.
+int32 mainBiome = 0;
+
+for (int32 b = 1; b < (int32)EBiome::Count; ++b)
+{
+	if (sample.biomeWeights.w[b] > sample.biomeWeights.w[mainBiome])
+		mainBiome = b;
+}
+
+metadata->InitializeOnSet(point.MetadataEntry);
+biomeAttribute->SetValue(point.MetadataEntry, mainBiome); // Store main biome enum index.
+</code></pre>
+
+                <p>
+                    The raw weights are also stored as <code>BiomeWeight::Biome</code> attributes. The graph doesn't use
+                    them yet, but they make it possible to blend props at biome borders later on, for example lowering
+                    the density where two biomes meet.
+                </p>
+
+                <img src="../media/planet/pcg_graph_showcase.png" alt="pcg points"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+
+                <p>
+                    <br>Inside the PCG graph, the output of the Sphere Surface Sampler goes into one <code>Filter Attribute
+                    Elements</code> node per biome, each filtering on the <code>Biome</code> attribute. The "Inside
+                    Filter" pin goes into a <code>Static Mesh Spawner</code> with the meshes for that biome and all
+                    other related settings like culling,the "Outside Filter" pin is left unused, so every point ends up
+                    in exactly one biome "branch". The Static Mesh Spawner spawns its meshes as instanced static meshes
+                    instead of separate actors, which keeps thousands of props cheap to render and makes it possible to
+                    cull the ones that are too far.
+                </p>
+
+                <p>
+                    Now models spawn in their respective biome, depending on how the PCG graph was setup.
+                </p>
+
+                <img src="../media/planet/cactus_scatter.png" alt="pcg points"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+
+                <img src="../media/planet/tree_scatter.png" alt="pcg points"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+
+                <img src="../media/planet/snow_scatter.png" alt="pcg points"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+
+                <img src="../media/planet/scatter_edge.png" alt="pcg points"
+                    style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
 
                 <h2 id="references">References</h2>
                 https://svnte.se/cdlod-terrain
