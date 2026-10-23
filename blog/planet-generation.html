@@ -1076,8 +1076,165 @@ else // If the mesh does not have to be generated from scratch, only update it.
 
                 <h2 id="scatter">PCG Terrain scattering</h2>
 
+                <p>
+                    To make the planets even more interesting, I added terrain scatter to the generation
+                    workflow. The somewhat naive solution would be to just instantiate models over the surface wherever,
+                    but this would run veeery slow and consume lots of precious VRAM. Instead of rolling my own
+                    solution, I took a look at Unreal's Procedural Generation Framework (PCG) because terrain scatter is
+                    something that would be perfect for this built-in system.
+                </p>
+
+                <p>
+                    PCG can be used to easily distribute points over a mesh and instantiate (instanced) actors.
+                    Distribution of the points can be tweaked further by the use of filters.
+                </p>
+
+                <img src="../media/planet/pcg_point_sampling.png" alt="pcg points"
+                    style="max-width: 65%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
+
+                <p>
+                    <br>Initially I just tried to make a super basic implementation on just a sphere. That is where I
+                    realized that out of the box, PCG only works on Unreal landscapes and static meshes. That was a
+                    problem since my planets are spherical dynamic meshes. That means the built-in mesh sampler would
+                    not work with my planets.
+                </p>
+
+                <p>
+                    After some more digging I found a reddit forum post about this specific topic. A user answered the
+                    question of creating custom PCG nodes in c++ with that the class <code>UPCGSettings</code> can be
+                    inherited from. That was exactly the solution I needed so I started writing my own custom PCG node.
+                    Starting simple by trying to distribute points over a uniform planet (sphere) without any noise.
+
+                    <br><br>To distribute the points I made use of Unreal's built-in <code>RandomStream</code> which is
+                    a seeded random generator with very even distribution:
+                </p>
+
+                <pre><code class="language-cpp">
+// RandomStream for seeded, even randomness.
+FRandomStream RandomStream(context->GetSeed());
+
+for (int32 i = 0; i < NumPoints; ++i)
+{
+	// Uniformly distributed unit vector on the sphere.
+	const FVector Direction = RandomStream.VRand();
+	const FVector Location = Settings->center + Direction * Settings->radius;
+
+	// Rotate the point so its local Z axis points away from the center.
+	const FQuat Rotation = FQuat::FindBetweenNormals(FVector::UpVector, Direction);
+
+	FPCGPoint& Point = Points.Emplace_GetRef();
+	Point.Transform = FTransform(Rotation, Location);
+	Point.Density = 1.0f;
+	Point.Seed = static_cast<int32>(RandomStream.GetUnsignedInt());
+}
+</code></pre>
+
+                <p>
+                    Then using the center of the planet and a random direction I scatter the PCG points around the
+                    surface of the sphere, making sure that the z axis is aligned to the surface of the sphere so that
+                    the spawned actors all "stand up" correctly.
+
+                    <br><br>PCG already lets me set things like instancing and automatic culling settings, which makes
+                    it run very fast without using many resources. This results in what you can see in the video down
+                    below, where I scattered 10k points over the sphere with a random chance of spawning a
+                    tree model or a grass model. The cull distance is set quite aggressively to showcase the automatic
+                    culling.
+
+                </p>
+
+                <video src="../media/planet/sphere_pcg_test.mp4" controls loop preload="metadata" playsinline
+                    style="max-width: 100%; height: auto;"></video>
+                <p style="text-align: center; font-size: smaller; font-style: italic;">Planet without any noise with PCG
+                    terrain scatter (10K points)</p>
+
+                <p>
+                    This worked great, now I just needed to actually take into account the multiple layers of terrain
+                    height generated from the 3D noise. To do that, I changed my custom PCG sampler node logic to
+                    instead of plotting cells based on the size and center of the planet, to use the internal point
+                    calculation <code>CalculatePointOnPlanet(pointOnSphere)</code> from my <code>ShapeGenerator</code>
+                    that is also used by the actual mesh generation of the planets.
+
+                    <br><br>
+                    This meant that because of this, the points get the exact terrain height the terrain uses. It also
+                    doesn't matter whether the chunk underneath has been built yet, or at which LOD level it is, it will
+                    always correctly calculate the correct "altitude" for the PCG point.
+
+                </p>
+
+                <pre><code class="language-cpp">
+const double radiusScale = shapeGenerator->GetPlanetRadius() / settings->referenceRadius;
+const FTransform planetTransform = planet->GetActorTransform();
+
+// Seeded, so the same seed always gives the same scatter.
+FRandomStream randomStream(context->GetSeed());
+
+for (int32 i = 0; i < numPoints; ++i)
+{
+	// Uniformly distributed direction on the unit sphere.
+	const FVector direction = randomStream.VRand();
+
+    // Sample the internal shape generator to exactly match the terrain mesh.
+	const FPlanetSample sample = shapeGenerator->CalculatePointOnPlanet(FVector3f(direction));
+
+	// Calculate correct position.
+
+	// Align the model's Z axis to the planet's local up, then spin it around that axis.
+
+	// Scale with the planet's radius, with a bit of randomness on top.
+
+	// Fetch and initialize point with the calculated transform.
+}
+</code></pre>
+
+                <p>
+                    <br>This results in the spawned actors correctly spawning on the surface no matter how many or how
+                    intense the noise layer are:
+                </p>
+
+                <video src="../media/planet/planet_pcg_test.mp4" controls loop preload="metadata" playsinline
+                    style="max-width: 100%; height: auto;"></video>
+
+                <p>
+                    I actually ran into some annoying problems here. The problem was that the first generation worked
+                    perfectly but after adjusting some of the noise layers on the planet to make it look different, the
+                    PCG actors disappeared completely. I was quite stumped on what was happening.
+
+                    <br><br>It turned out to be that the PCG graph only re-runs when something tells it to. Changing a
+                    value in the shape settings data asset (place where the noise settings live) regenerates the mesh
+                    through the <code>APlanet</code> class but PCG doesn’t know about it. So the fix was to
+                    trigger a PCG rebuild whenever the planet (data asset) changes/updates. I chose to do this via the
+                    <code>GeneratePlanetFromEditor</code> button that was already there for the general generation.
+                </p>
+
+                <pre><code class="language-cpp">
+UFUNCTION(CallInEditor, Category = "Planet")
+void GeneratePlanetFromEditor();
+
+
+void APlanet::GeneratePlanetFromEditor()
+{
+	Initialize();
+	UpdateLod();
+	RegeneratePCG();
+}
+</code></pre>
+
+                <pre><code class="language-cpp">
+void APlanet::RegeneratePCG()
+{
+	if (PCGComponent != nullptr)
+		PCGComponent->GenerateLocal(/*bForce=*/true);
+}
+</code></pre>
+
+                <p>
+                    This solution finally fixed the issue, the PCG models now were updating correctly after changing the
+                    planet settings to make it look different.
+                </p>
+
                 <h2 id="references">References</h2>
                 https://svnte.se/cdlod-terrain
+                [this](https://www.reddit.com/r/unrealengine/comments/197j4sx/is_it_possible_to_use_the_pcg_system_from_c/)
 
             </div>
         </article>
