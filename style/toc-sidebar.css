@@ -8,7 +8,8 @@
     --toc-accent-soft: rgba(246, 249, 250, 0.08);
 }
 
-.blog-post-content h2[id] {
+.blog-post-content h2[id],
+.blog-post-content h3[id] {
     scroll-margin-top: 24px;
 }
 
@@ -169,4 +170,13 @@
 .toc-sidebar::-webkit-scrollbar-thumb:hover,
 .toc-sidebar *::-webkit-scrollbar-thumb:hover {
     background: rgba(200, 200, 200, 0.5);
+}
+
+.toc-list .toc-item--sub a {
+    padding-left: 28px;
+    font-size: 0.78rem;
+}
+
+.toc-list a.is-parent-active {
+    color: var(--toc-text-hover);
 }

@@ -2,7 +2,7 @@
     const content = document.querySelector('.blog-post-content');
     if (!content) return;
 
-    const headings = [...content.querySelectorAll('h2[id]')];
+    const headings = [...content.querySelectorAll('h2[id], h3[id]')];
     if (headings.length < 2) return;
 
     const nav = document.createElement('nav');
@@ -20,11 +20,21 @@
     const list = document.createElement('ol');
     list.className = 'toc-list';
 
-    const links = headings.map(heading => {
+    const parents = [];
+    let lastH2Index = -1;
+
+    const links = headings.map((heading, i) => {
+        const isSub = heading.tagName === 'H3';
+        if (!isSub) lastH2Index = i;
+        parents.push(isSub ? lastH2Index : -1);
+
         const item = document.createElement('li');
+        item.className = isSub ? 'toc-item toc-item--sub' : 'toc-item';
+
         const link = document.createElement('a');
         link.href = '#' + heading.id;
         link.textContent = heading.textContent.trim();
+
         item.append(link);
         list.append(item);
         return link;
@@ -41,12 +51,19 @@
         if (activeIndex >= 0) {
             links[activeIndex].classList.remove('is-active');
             links[activeIndex].removeAttribute('aria-current');
+
+            const oldParent = parents[activeIndex];
+            if (oldParent >= 0) links[oldParent].classList.remove('is-parent-active');
         }
 
         activeIndex = index;
         const link = links[index];
         link.classList.add('is-active');
         link.setAttribute('aria-current', 'location');
+
+        const parent = parents[index];
+        if (parent >= 0) links[parent].classList.add('is-parent-active');
+
         currentLabel.textContent = link.textContent;
 
         const top = link.offsetTop;

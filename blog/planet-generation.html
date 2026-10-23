@@ -83,7 +83,7 @@
                     </li>
                     <li><strong>Real-time Level of Detail (LOD):</strong> Uses a custom LOD system to
                         automatically adjust the quality of the terrain based on the observer distance. Allowing for
-                        real-time generation without majorly impacting impacting performance.</li>
+                        real-time generation without majorly impacting performance.</li>
                     <li><strong>Terrain scatter:</strong> A fully configurable, optimized biome-depended terrain
                         scatter. Able to scatter millions of terrain pieces on the surface of planets. Utilizing
                         Unreal's Procedural Generation Framework (PCG) using custom PCG graph nodes.
@@ -97,15 +97,55 @@
                 </ul>
                 </p>
 
-
                 <h2 style="margin-bottom: 12px;">Table of Contents</h2>
                 <ul style="margin-bottom: 40px; line-height: 1.8;">
                     <li><a href="#introduction">Introduction</a></li>
-                    <li><a href="#genproc_sphere">Procedurally generating a sphere</a></li>
-                    <li><a href="#noise">Adding noise</a></li>
+                    <li><a href="#genproc_sphere">Procedurally generating a sphere</a>
+                        <ul style="margin-top: 8px; margin-bottom: 8px;">
+                            <li><a href="#sphere-types">Comparing sphere types</a></li>
+                            <li><a href="#choosing-cube-sphere">Choosing the cube sphere</a></li>
+                            <li><a href="#building-mesh">Building the mesh</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#noise">Adding noise</a>
+                        <ul style="margin-top: 8px; margin-bottom: 8px;">
+                            <li><a href="#noise-filter">A simple noise filter</a></li>
+                            <li><a href="#fractal-noise">Fractal noise</a></li>
+                            <li><a href="#height-coloring">Height-based coloring</a></li>
+                        </ul>
+                    </li>
                     <li><a href="#optimizing">Optimizing the mesh</a></li>
-                    <li><a href="#quadtree">Quadtree</a></li>
-                    <li><a href="#lod">LOD system</a></li>
+                    <li><a href="#CDLOD">CDLOD</a></li>
+                    <li><a href="#quadtree">Quadtree</a>
+                        <ul style="margin-top: 8px; margin-bottom: 8px;">
+                            <li><a href="#quadtree-experiment">A capacity-based experiment</a></li>
+                            <li><a href="#observer-quadtree">Subdividing around the observer</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#lod">LOD system</a>
+                        <ul style="margin-top: 8px; margin-bottom: 8px;">
+                            <li><a href="#chunk-reuse">Reusing chunks</a></li>
+                            <li><a href="#split-logic">When to split a node</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#biome">Biome generation</a>
+                        <ul style="margin-top: 8px; margin-bottom: 8px;">
+                            <li><a href="#biome-techniques">Height-based vs. Voronoi biomes</a></li>
+                            <li><a href="#biomes-shape-terrain">Biomes shape the terrain</a></li>
+                            <li><a href="#biome-cells">Distributing biome cells</a></li>
+                            <li><a href="#biome-weights">Blending biome weights</a></li>
+                            <li><a href="#biome-coloring">Painting the biomes</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#scatter">PCG terrain scattering</a>
+                        <ul style="margin-top: 8px; margin-bottom: 8px;">
+                            <li><a href="#pcg-sampler">A custom sphere sampler node</a></li>
+                            <li><a href="#pcg-terrain-height">Following the terrain height</a></li>
+                            <li><a href="#pcg-regenerate">Keeping PCG in sync</a></li>
+                            <li><a href="#pcg-biomes">Biome-dependent scatter</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#conclusion">Conclusion</a></li>
                     <li><a href="#references">References</a></li>
                 </ul>
 
@@ -119,9 +159,13 @@
                 </p>
 
 
+                <h3 id="sphere-types">Comparing sphere types</h3>
                 <img src="../media/planet/cube_sphere.png" alt="Cube sphere"
                     style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy"
                     decoding="async"><br>
+
+
+                <h4>Cube sphere</h4>
 
                 A cubified sphere simply starts as a normal cube. Then by pulling its vertices toward its center, it
                 will become a nice sphere mesh.
@@ -159,6 +203,7 @@
                     style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy"
                     decoding="async"><br>
 
+                <h4>Icosphere</h4>
                 The Icosphere (icosahedron) has twenty sides so it provides the most even vertex distribution of all the
                 options.
 
@@ -191,6 +236,7 @@
                     style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy"
                     decoding="async"><br>
 
+                <h4>Fibonacci sphere</h4>
                 Using the golden ratio, points are plotted almost evenly across the surface of an imaginary sphere using
                 the golden ratio and spiral patterns.
 
@@ -218,6 +264,7 @@
                     </table>
                 </div>
 
+                <h3 id="choosing-cube-sphere">Choosing the cube sphere</h3>
                 <p>
 
                     After carefully considering all options, I decided to go for the cube sphere. I choose this sphere
@@ -237,6 +284,7 @@
                     style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy"
                     decoding="async"><br>
 
+                <h3 id="building-mesh">Building the mesh</h3>
                 <p>
                     The sphere is built out of six separate faces, one for each side of the original cube. Every face
                     is defined by a <code>localUp</code> direction (the direction the face points to) and two axes,
@@ -318,6 +366,7 @@ if (x != resolution - 1 && y != resolution - 1)
 
 
                 <h2 id="noise">Adding noise</h2>
+                <h3 id="noise-filter">A simple noise filter</h3>
 
                 <p>
                     Now that the tool can generate modifiable spheres, the next step is to apply some 3D noise to the
@@ -369,6 +418,7 @@ FVector3f UShapeGenerator::CalculatePointOnPlanet(FVector3f pointOnSphere)
                 <img src="../media/planet/planet_initial_noise.png" alt="Fibonacci sphere"
                     style="max-width: 100%; height: auto;" loading="lazy" decoding="async"><br>
 
+                <h3 id="fractal-noise">Fractal noise</h3>
                 <p>
                     To make it look even more interesting, I wanted to add the ability to stack different layers of
                     fractal noise on top of each other. To do that, I first needed to sample fractal noise instead of
@@ -428,6 +478,7 @@ float UNoiseFilter::EvaluateNoise(FVector3f point, FNoiseSettings noiseSettings)
                     style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy"
                     decoding="async"><br>
 
+                <h3 id="height-coloring">Height-based coloring</h3>
                 <p>
                     Lastly for this stage, to add some colors to the planet, I can fake it with a distance based shader.
                     I used the custom node inside the material graph to write my own HLSL code because that was way
@@ -526,7 +577,7 @@ return color;
 
                 </p>
 
-
+                <h3 id="quadtree-experiment">A capacity-based experiment</h3>
                 <p>
                     To start implementing CDLOD for my planet generator I had to start with quadtrees but at that point
                     I was only really aware about the name (Quadtrees) but had absolutely no clue how they worked and
@@ -594,6 +645,7 @@ bool Quadtree::Insert(Point& point)
                 <p style="text-align: center; font-size: smaller; font-style: italic;">Quadrant experiment ported over
                     to Unreal 5.8.</p>
 
+                <h3 id="observer-quadtree">Subdividing around the observer</h3>
                 <P>
                     At first I wasn't sure how to adapt the quadtree to be able to work with terrain instead of being
                     capacity-based as shown in the experiment above. After some further researching I came across a
@@ -658,8 +710,9 @@ void Quadtree::ReBuild(const FQuadTreeLODConfig& settings, const FVector3f& obse
                 <img src="../media/planet/lod_update_flow_diagram.png" alt="observer_quadtree_ue"
                     style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
 
+                <h3 id="chunk-reuse">Reusing chunks</h3>
                 <p>
-                    <br>Each leaf gets a unique <code>uint64</code> key, packed from its depth and grid position.
+                    Each leaf gets a unique <code>uint64</code> key, packed from its depth and grid position.
                     Comparing the new leaf keys against the previous update gives three cases:
 
                 <ul>
@@ -721,6 +774,7 @@ void APlanet::UpdateLod()
 }
 </code></pre>
 
+                <h3 id="split-logic">When to split a node</h3>
                 <p>
                     The tree is then rebuilt from the root on every update (when the camera moves). Updating the tree is
                     luckily quite cheap because there is only one observer (the camera). Nodes close to the
@@ -763,6 +817,8 @@ bool Quadtree::ShouldSplit(const FQuadTreeLODConfig& settings, const FVector3f& 
 
                 <h2 id="biome">Biome generation</h2>
 
+                <h3 id="biome-techniques">Height-based vs. Voronoi biomes</h3>
+
                 <p>
                     I started researching how other people tackled this. A frequently used technique to quickly get some
                     sort of biomes is generating biomes depending on the height of the terrain (the raw noise values).
@@ -802,8 +858,9 @@ bool Quadtree::ShouldSplit(const FQuadTreeLODConfig& settings, const FVector3f& 
                 <img src="../media/planet/raw_voronoi_noise.png" alt="raw_noise_based_biomes"
                     style="max-width: 75%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
 
+                <h3 id="biomes-shape-terrain">Biomes shape the terrain</h3>
                 <p>
-                    <br>Another important consideration will be deciding if i want my terrain to shape the biomes or if
+                    Another important consideration will be deciding if i want my terrain to shape the biomes or if
                     the biomes should shape the terrain. When the terrain shapes the biomes, the biomes are more a
                     afterthought, where terrain is generated first and then the system asks "which biome fits on this
                     terrain?".
@@ -886,8 +943,8 @@ bool Quadtree::ShouldSplit(const FQuadTreeLODConfig& settings, const FVector3f& 
                     though.
                 </p>
 
+                <h3 id="biome-cells">Distributing biome cells</h3>
                 <p>
-
                     Since the planets are spherified cubed, the planet has 6 distinctive sides that are planes. I could
                     project Voronoi/Worley noise to each side. This solves the problem of trying to map one huge
                     noise map to the whole planet.
@@ -898,12 +955,10 @@ bool Quadtree::ShouldSplit(const FQuadTreeLODConfig& settings, const FVector3f& 
                     style="max-width: 50%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
 
                 <p>
-
                     However, I realized this wasn't really is the best solution because this will cause major artifacts
                     on the edge borders. Instead I am planning to sample biome noise based on a Fibonacci sphere since
                     the terrain noise is evaluated separately from the rest of the generation pipeline.
                 </p>
-
 
                 <img src="../media/planet/fib_sphere.png" alt="biome_generation_strategy_doodle"
                     style="max-width: 50%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
@@ -944,6 +999,7 @@ for (int32 i = 0; i < shapeSettings.biomeCellCount; i++)
                     the biomes.
                 </p> -->
 
+                <h3 id="biome-weights">Blending biome weights</h3>
                 <p>
                     Using a data asset, the user can easily maintain and tweak values like the amount of biome cells to
                     generate or the amount of jitter on the distributed points (warp intensity).
@@ -1053,6 +1109,7 @@ else // If the mesh does not have to be generated from scratch, only update it.
 }
 </code></pre>
 
+                <h3 id="biome-coloring">Painting the biomes</h3>
                 <p>
                     When plugging the vertex color directly into the base color of the material, this debug view can be
                     seen. All biomes have their distinctive color range.
@@ -1097,8 +1154,9 @@ else // If the mesh does not have to be generated from scratch, only update it.
                 <img src="../media/planet/pcg_point_sampling.png" alt="pcg points"
                     style="max-width: 65%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
 
+                <h3 id="pcg-sampler">A custom sphere sampler node</h3>
                 <p>
-                    <br>Initially I just tried to make a super basic implementation on just a sphere. That is where I
+                    Initially I just tried to make a super basic implementation on just a sphere. That is where I
                     realized that out of the box, PCG only works on Unreal landscapes and static meshes. That was a
                     problem since my planets are spherical dynamic meshes. That means the built-in mesh sampler would
                     not work with my planets.
@@ -1165,6 +1223,7 @@ for (int32 i = 0; i < NumPoints; ++i)
                 <p style="text-align: center; font-size: smaller; font-style: italic;">Planet without any noise with PCG
                     terrain scatter (10K points)</p>
 
+                <h3 id="pcg-terrain-height">Following the terrain height</h3>
                 <p>
                     This worked great, now I just needed to actually take into account the multiple layers of terrain
                     height generated from the 3D noise. To do that, I changed my custom PCG sampler node logic to
@@ -1212,6 +1271,7 @@ for (int32 i = 0; i < numPoints; ++i)
                 <video src="../media/planet/planet_pcg_test.mp4" controls loop preload="metadata" playsinline
                     style="max-width: 100%; height: auto;"></video>
 
+                <h3 id="pcg-regenerate">Keeping PCG in sync</h3>
                 <p>
                     I actually ran into some annoying problems here. The problem was that the first generation worked
                     perfectly but after adjusting some of the noise layers on the planet to make it look different, the
@@ -1250,6 +1310,7 @@ void APlanet::RegeneratePCG()
                     planet settings to make it look different.
                 </p>
 
+                <h3 id="pcg-biomes">Biome-dependent scatter</h3>
                 <p>
                     Now that I could spawn these a huge number of terrain props on the planet, the next step was to add
                     the ability to make the spawning of these pieces biome depended. The planets can currently have
@@ -1320,9 +1381,99 @@ biomeAttribute->SetValue(point.MetadataEntry, mainBiome); // Store main biome en
                 <img src="../media/planet/scatter_edge.png" alt="pcg points"
                     style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
 
+                <h2 id="conclusion">Conclusion</h2>
+
+                <p>
+                    What started as a simple cube sphere grew into a tool that can generate and render planets at
+                    real-life scales inside Unreal 5. Layered fBM noise gives the terrain its shape. A quadtree-based
+                    LOD
+                    system, inspired by CDLOD, keeps it running in real time by only rebuilding the chunks that actually
+                    change. Biomes sampled from a warped Fibonacci sphere shape the terrain instead of being painted on
+                    afterwards. On top of all that, a custom PCG sampler node scatters biome-specific props across the
+                    surface using instanced meshes and automatic culling.<br><br>
+
+                    There is still plenty I would like to improve, like smoothing out the seams along the cube face
+                    edges and using the stored biome weights to blend props more naturally where two biomes meet. Even
+                    so, I am really happy with how far the project came. It taught me a lot about real-time procedural
+                    generation, quadtrees, LOD systems, fractal noise and working inside Unreal's built-in systems from
+                    C++.<br><br>
+
+                    Thank you for taking the time to read this post! I hope it gave you some useful insights or maybe
+                    even inspiration for your own procedural projects.
+                </p>
+
                 <h2 id="references">References</h2>
-                https://svnte.se/cdlod-terrain
-                [this](https://www.reddit.com/r/unrealengine/comments/197j4sx/is_it_possible_to_use_the_pcg_system_from_c/)
+                <p>
+                    This project was inspired by and built upon the following resources and
+                    projects:
+                </p>
+                <ul>
+                    <li><strong>"Generating Biomes in a Procedural World"</strong> - A video by Alex K. on how biomes
+                        are
+                        generated in a procedural world. Watch <a href="https://www.youtube.com/watch?v=qsNk-pZJcaY">on
+                            YouTube</a>.
+                    </li>
+                    <li><strong>"3 Ways to Scatter PCG Points on a Mesh"</strong> - A video by Aziel Arts showing three
+                        methods
+                        for scattering PCG points on a mesh in Unreal Engine 5. Watch <a
+                            href="https://www.youtube.com/watch?v=Y70rxO0Q2J8">on YouTube</a>.
+                    </li>
+                    <li><strong>"Procedural Generation (PCG) Under 5 Mins"</strong> - A quick introduction by Bad
+                        Decisions Studio
+                        to the PCG framework in Unreal Engine 5. Watch <a
+                            href="https://www.youtube.com/watch?v=MF8ZMdOX7pU">on
+                            YouTube</a>.
+                    </li>
+                    <li><strong>Large World Coordinates</strong> by Epic Games - Official Unreal Engine 5 documentation
+                        on
+                        large world coordinates. Read <a
+                            href="https://dev.epicgames.com/documentation/unreal-engine/large-world-coordinates-in-unreal-engine-5">the
+                            documentation</a>.
+                    </li>
+                    <li><strong>Voronoi biome generation</strong> - Reddit forum post by iph0 sharing experiments with
+                        map
+                        generation and Voronoi-based biomes. Visit <a
+                            href="https://www.reddit.com/r/proceduralgeneration/comments/yhiuxf/my_experiments_of_map_generation_with_biomes_for/">on
+                            reddit</a>.
+                    </li>
+                    <li><strong>"CDLOD Terrain"</strong> - A technical blog by Svante Lindgren demonstrating a CDLOD
+                        implementation. Visit <a href="https://svnte.se/cdlod-terrain">his blog</a>.
+                    </li>
+                    <li><strong>PCG custom node</strong> - Reddit forum discussing how to work with PCG in C++. Visit <a
+                            href="https://www.reddit.com/r/unrealengine/comments/197j4sx/is_it_possible_to_use_the_pcg_system_from_c/">on
+                            reddit</a>.
+                    </li>
+                    <li><strong>3D World Generation</strong> by SimonDev - A video series on building a procedural 3D
+                        world.
+                        Watch <a
+                            href="https://www.youtube.com/watch?v=hHGshzIXFWY&amp;list=PLRL3Z3lpLmH3PNGZuDNf2WXnLTHpN9hXy">the
+                            playlist</a>.
+                    </li>
+                    <li><strong>"3D World Generation: #3 (Quadtree &amp; LOD)"</strong> - A video by SimonDev covering
+                        quadtrees
+                        and level of detail for terrain. Watch <a href="https://www.youtube.com/watch?v=YO_A5w_fxRQ">on
+                            YouTube</a>
+                        and browse <a href="https://github.com/simondevyoutube/ProceduralTerrain_Part3">the source code
+                            on GitHub</a>.
+                    </li>
+                    <li><strong>CDLOD</strong> by Filip Strugar - Continuous Distance-Dependent Level of Detail for
+                        Rendering Heightmaps (CDLOD). Visit <a href="https://github.com/fstrugar/CDLOD">his GitHub</a>
+                        and read about <a
+                            href="https://github.com/fstrugar/CDLOD/blob/master/cdlod_paper_latest.pdf">the updated
+                            paper</a>.
+                    </li>
+                    <li><strong>"I Found a Better Way to Generate Biomes"</strong> - A video by Tantan on an improved
+                        approach
+                        to biome generation in his voxel engine. Watch <a
+                            href="https://www.youtube.com/watch?v=oztbyI-1NII">on
+                            YouTube</a>.
+                    </li>
+                    <li><strong>Quadtree Coding Challenge</strong> by The Coding Train - A two-part coding challenge
+                        implementing a quadtree from scratch. Watch <a
+                            href="https://www.youtube.com/watch?v=OJxEcs0w_kE">Part 1</a>
+                        and <a href="https://www.youtube.com/watch?v=QQx_NmCIuCY">Part 2</a>.
+                    </li>
+                </ul>
 
             </div>
         </article>
