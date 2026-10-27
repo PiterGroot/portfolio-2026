@@ -97,58 +97,6 @@
                 </ul>
                 </p>
 
-                <h2 style="margin-bottom: 12px;">Table of Contents</h2>
-                <ul style="margin-bottom: 40px; line-height: 1.8;">
-                    <li><a href="#introduction">Introduction</a></li>
-                    <li><a href="#genproc_sphere">Procedurally generating a sphere</a>
-                        <ul style="margin-top: 8px; margin-bottom: 8px;">
-                            <li><a href="#sphere-types">Comparing sphere types</a></li>
-                            <li><a href="#choosing-cube-sphere">Choosing the cube sphere</a></li>
-                            <li><a href="#building-mesh">Building the mesh</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="#noise">Adding noise</a>
-                        <ul style="margin-top: 8px; margin-bottom: 8px;">
-                            <li><a href="#noise-filter">A simple noise filter</a></li>
-                            <li><a href="#fractal-noise">Fractal noise</a></li>
-                            <li><a href="#height-coloring">Height-based coloring</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="#optimizing">Optimizing the mesh</a></li>
-                    <li><a href="#CDLOD">CDLOD</a></li>
-                    <li><a href="#quadtree">Quadtree</a>
-                        <ul style="margin-top: 8px; margin-bottom: 8px;">
-                            <li><a href="#quadtree-experiment">A capacity-based experiment</a></li>
-                            <li><a href="#observer-quadtree">Subdividing around the observer</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="#lod">LOD system</a>
-                        <ul style="margin-top: 8px; margin-bottom: 8px;">
-                            <li><a href="#chunk-reuse">Reusing chunks</a></li>
-                            <li><a href="#split-logic">When to split a node</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="#biome">Biome generation</a>
-                        <ul style="margin-top: 8px; margin-bottom: 8px;">
-                            <li><a href="#biome-techniques">Height-based vs. Voronoi biomes</a></li>
-                            <li><a href="#biomes-shape-terrain">Biomes shape the terrain</a></li>
-                            <li><a href="#biome-cells">Distributing biome cells</a></li>
-                            <li><a href="#biome-weights">Blending biome weights</a></li>
-                            <li><a href="#biome-coloring">Painting the biomes</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="#scatter">PCG terrain scattering</a>
-                        <ul style="margin-top: 8px; margin-bottom: 8px;">
-                            <li><a href="#pcg-sampler">A custom sphere sampler node</a></li>
-                            <li><a href="#pcg-terrain-height">Following the terrain height</a></li>
-                            <li><a href="#pcg-regenerate">Keeping PCG in sync</a></li>
-                            <li><a href="#pcg-biomes">Biome-dependent scatter</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="#conclusion">Conclusion</a></li>
-                    <li><a href="#references">References</a></li>
-                </ul>
-
                 <h2 id="genproc_sphere">Procedurally generating a sphere</h2>
                 <p>
                     In order to generate planets, the tool first needs to be able to generate a sphere. There are a
@@ -1384,19 +1332,13 @@ biomeAttribute->SetValue(point.MetadataEntry, mainBiome); // Store main biome en
                 <h2 id="conclusion">Conclusion</h2>
 
                 <p>
-                    What started as a simple cube sphere grew into a tool that can generate and render planets at
-                    real-life scales inside Unreal 5. Layered fBM noise gives the terrain its shape. A quadtree-based
-                    LOD
-                    system, inspired by CDLOD, keeps it running in real time by only rebuilding the chunks that actually
-                    change. Biomes sampled from a warped Fibonacci sphere shape the terrain instead of being painted on
-                    afterwards. On top of all that, a custom PCG sampler node scatters biome-specific props across the
-                    surface using instanced meshes and automatic culling.<br><br>
-
-                    There is still plenty I would like to improve, like smoothing out the seams along the cube face
-                    edges and using the stored biome weights to blend props more naturally where two biomes meet. Even
-                    so, I am really happy with how far the project came. It taught me a lot about real-time procedural
-                    generation, quadtrees, LOD systems, fractal noise and working inside Unreal's built-in systems from
-                    C++.<br><br>
+                    What started as a simple sphere turned into a tool that can generate and render planets at
+                    real-life scales inside Unreal 5. There is still plenty I would like to improve, like smoothing out
+                    the seams along the cube face edges, adding support for custom biomes and a more general features
+                    like an atmosphere shader or even a little solar system generator. Even so, I am really happy with
+                    how far the project came. It taught me a lot about real-time procedural generation, new data
+                    structures and algorithms like quadtrees and LOD systems, fractal noise and working inside Unreal's
+                    built-in systems from C++.<br><br>
 
                     Thank you for taking the time to read this post! I hope it gave you some useful insights or maybe
                     even inspiration for your own procedural projects.
