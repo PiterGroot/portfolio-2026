@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Planet generation</title>
-    <meta name="description" content="An UE5 tool to generate and render huge planets.">
+    <meta name="description" content="A UE5 tool to generate and render huge planets.">
     <meta name="author" content="Piter Groot">
     <link rel="canonical" href="https://pitergroot.github.io/portfolio-2026/blog/planet-generation.html">
 
@@ -14,7 +14,7 @@
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="Piter Groot">
     <meta property="og:title" content="Planet generation">
-    <meta property="og:description" content="An UE5 tool to generate and render huge planets.">
+    <meta property="og:description" content="A UE5 tool to generate and render huge planets.">
     <meta property="og:url" content="https://pitergroot.github.io/portfolio-2026/blog/planet-generation.html">
     <meta property="og:image" content="https://pitergroot.github.io/portfolio-2026/media/planet/logo.png">
     <meta property="article:published_time" content="2026-10-19">
@@ -67,7 +67,7 @@
                     tool inside Unreal 5 to generate planets. Not just small "gamified" planets, but planets with huge
                     scales nearing real-life sizes.<br><br>
 
-                    Below is a video showcasing the generator in action, generating and updating a planet (same size of
+                    Below is a video showcasing the generator in action, generating and updating a planet (same size as
                     the earth) with some exaggerated noise, biomes and terrain scattering. Quality of the terrain is
                     dynamically adjusted using the LOD system based on the distance of the camera.
                 </p>
@@ -84,9 +84,9 @@
                     <li><strong>Real-time Level of Detail (LOD):</strong> Uses a custom LOD system to
                         automatically adjust the quality of the terrain based on the observer distance. Allowing for
                         real-time generation without majorly impacting performance.</li>
-                    <li><strong>Terrain scatter:</strong> A fully configurable, optimized biome-depended terrain
+                    <li><strong>Terrain scatter:</strong> A fully configurable, optimized biome-dependent terrain
                         scatter. Able to scatter millions of terrain pieces on the surface of planets. Utilizing
-                        Unreal's Procedural Generation Framework (PCG) using custom PCG graph nodes.
+                        Unreal's Procedural Content Generation Framework (PCG) using custom PCG graph nodes.
                     </li>
                     <li><strong>Biomes:</strong> Planets can be generated with random biomes that have unique colors,
                         terrain scatter and specific terrain noise. Biomes shape the terrain.
@@ -100,7 +100,8 @@
                 <h2 id="genproc_sphere">Procedurally generating a sphere</h2>
                 <p>
                     In order to generate planets, the tool first needs to be able to generate a sphere. There are a
-                    couple types of spheres that I could choose from. I narrowed my focus on the <strong>cube</strong>
+                    couple of types of spheres that I could choose from. I narrowed my focus to the
+                    <strong>cube</strong>
                     sphere, <strong>icosphere</strong> and <strong>Fibonacci</strong> sphere. To make a decision on
                     which type of sphere I wanted to use, I listed the pros and cons of each type of sphere in a table
                     to make it easier to compare them.
@@ -200,11 +201,11 @@
                         <tbody>
                             <tr>
                                 <td>Perfect point distribution</td>
-                                <td>Cant directly use for mesh generation because the winding order is all jumbled.
+                                <td>Can't directly use for mesh generation because the winding order is all jumbled.
                                     Needs to be projected on a plane first.</td>
                             </tr>
                             <tr>
-                                <td>Very cheap to generate because of the straight forward matxhs required.</td>
+                                <td>Very cheap to generate because of the straightforward maths required.</td>
                                 <td>Has distorted poles, the points near the poles tend to cluster tighter than
                                     those around the equator.</td>
                             </tr>
@@ -215,8 +216,9 @@
                 <h3 id="choosing-cube-sphere">Choosing the cube sphere</h3>
                 <p>
 
-                    After carefully considering all options, I decided to go for the cube sphere. I choose this sphere
-                    because it felt like a robust sphere with decent uniformity. Also the biggest was that I knew I
+                    After carefully considering all options, I decided to go for the cube sphere. I chose this sphere
+                    because it felt like a robust sphere with decent uniformity. Also the biggest reason was that I knew
+                    I
                     eventually wanted to implement a Level of Detail system later on which could work nicely with this
                     because every cube face could be a quadtree that could be used for the LOD's generation.<br><br>
 
@@ -224,7 +226,7 @@
                     postprocessing to the edges of the cube faces because some visual artifacts could appear where those
                     edges meet.
 
-                    This can be seen in the initial implementation inside unreal, if you look closely, you can see the
+                    This can be seen in the initial implementation inside Unreal, if you look closely, you can see the
                     seam on the edges of the cube faces:
                 </p>
 
@@ -320,7 +322,7 @@ if (x != resolution - 1 && y != resolution - 1)
                     Now that the tool can generate modifiable spheres, the next step is to apply some 3D noise to the
                     surface to make it look a little more interesting. To keep the generation framework flexible and
                     less tightly coupled, I made the <code>NoiseFilter</code> class, specifically used for sampling and
-                    applying noise. This class uses the built-in 3D perlin noise functions from the <code>FMath</code>
+                    applying noise. This class uses the built-in 3D Perlin noise functions from the <code>FMath</code>
                     dependency.
                 </p>
 
@@ -370,8 +372,8 @@ FVector3f UShapeGenerator::CalculatePointOnPlanet(FVector3f pointOnSphere)
                 <p>
                     To make it look even more interesting, I wanted to add the ability to stack different layers of
                     fractal noise on top of each other. To do that, I first needed to sample fractal noise instead of
-                    normal noise. Fractal noise (or frequently called fbm noise) can be sampled by multiplying noise
-                    maps with different amplitudes, frequencies and persistence's.
+                    normal noise. Fractal noise (frequently called fbm noise) can be sampled by multiplying noise
+                    maps with different amplitudes, frequencies and persistences.
                 </p>
 
                 <img src="../media/planet/fractal_noise_explanation.png" alt="Fibonacci sphere"
@@ -379,9 +381,10 @@ FVector3f UShapeGenerator::CalculatePointOnPlanet(FVector3f pointOnSphere)
 
                 <p>
                     In terms of the code implementation, this means I loop over the octave count and sample noise. On
-                    every sample, the specified frequency, amplitude and persistence gets added in different ways to
+                    every sample, the specified frequency, amplitude and persistence get added in different ways to
                     transform each level of octave just like in the image shown above; noise samples with different
-                    fractal settings get overlapped to a final noise map. Resulting in having the ability to tweak both
+                    fractal settings get overlapped into a final noise map. Resulting in having the ability to tweak
+                    both
                     the broader and the finer details.
                 </p>
 
@@ -400,7 +403,7 @@ float UNoiseFilter::EvaluateNoise(FVector3f point, FNoiseSettings noiseSettings)
 
         // Every pass, frequency gets multiplied against the roughness.
         frequency *= noiseSettings.roughness;
-        // Every pass, frequency gets multiplied against the persistence.
+        // Every pass, amplitude gets multiplied against the persistence.
         amplitude *= noiseSettings.persistence;
     }
 
@@ -411,7 +414,7 @@ float UNoiseFilter::EvaluateNoise(FVector3f point, FNoiseSettings noiseSettings)
 
                 <p>
                     This is a major improvement from just using 1 single noise map to shape the terrain. Planets can now
-                    have more intricated surfaces.
+                    have more intricate surfaces.
                 </p>
 
                 <img src="../media/planet/fractal_noise_implementation.png" alt="Fibonacci sphere"
@@ -489,7 +492,7 @@ return color;
                     2020-06-13</p>
 
                 <p>
-                    Fixed sized grids and quadtrees are the building blocks of this technique. Quadtree are rebuilt
+                    Fixed sized grids and quadtrees are the building blocks of this technique. Quadtrees are rebuilt
                     every frame, after rebuilding the tree gets recursively subdivided around the position of the
                     observer (usually the camera) while also taking into account the distance from the nodes.
 
@@ -518,7 +521,7 @@ return color;
 
                 <p>
                     A quadtree can be capacity based for example, which means that the tree recursively splits
-                    up when the amount of points inside a quadrant exceeds the predefined capacity. Resulting into many
+                    up when the number of points inside a quadrant exceeds the predefined capacity. Resulting in many
                     tree divisions near areas where a lot of points are. In the real world, this would most likely be
                     used for something like collision detections where the system needs to check if objects are
                     overlapping/colliding.
@@ -528,9 +531,9 @@ return color;
                 <h3 id="quadtree-experiment">A capacity-based experiment</h3>
                 <p>
                     To start implementing CDLOD for my planet generator I had to start with quadtrees but at that point
-                    I was only really aware about the name (Quadtrees) but had absolutely no clue how they worked and
+                    I was only really aware of the name (Quadtrees) but had absolutely no clue how they worked and
                     how they could be used. That's why I decided to first try and implement the most basic version in a
-                    standalone c++ project.
+                    standalone C++ project.
                 </p>
 
                 <img src="../media/planet/capacity-quadtree.gif" alt="search-quadtree"
@@ -543,11 +546,11 @@ return color;
                     is built which means it subdivides based on the points plotted in the tree. Instead of having to
                     check all 300 points to see which ones are in my query area (green
                     rectangle), only a fraction of those total points needed to be checked, dramatically reducing the
-                    the number of checks needed for the result.
+                    number of checks needed for the result.
                 </p>
 
                 <p>
-                    In terms of code, when a point gets inserted, the root node (top most node in the tree structure)
+                    In terms of code, when a point gets inserted, the root node (topmost node in the tree structure)
                     recursively goes over any quadrants it needs to make sure that the point goes into a quadrant where
                     no subdivision is needed.
                 </p>
@@ -555,11 +558,11 @@ return color;
                 <pre><code class="language-cpp">
 bool Quadtree::Insert(Point& point)
 {
-    // Only continue if the point is inserted into this quadrants boundary.
+    // Only continue if the point is inserted into this quadrant's boundary.
 	if (!boundary.Contains(point)) 
 		return false;
 
-    // If this new point doesn't exceeds the capacity, add it to this quadrant and return true.
+    // If this new point doesn't exceed the capacity, add it to this quadrant and return true.
 	if (points.size() < capacity)
 	{
 		points.push_back(point);
@@ -571,7 +574,7 @@ bool Quadtree::Insert(Point& point)
 		if (!divided) 
 			Subdivide();
 
-        //Resursively insert point untill a point is successfully inserted somewhere.
+        //Recursively insert point until a point is successfully inserted somewhere.
 		if (childNw->Insert(point)) return true;
 		else if (childNe->Insert(point)) return true;
 		else if (childSe->Insert(point)) return true;
@@ -583,8 +586,8 @@ bool Quadtree::Insert(Point& point)
 </code></pre>
 
                 <p>
-                    This little experiment was vital for my understanding on the actual applications for quadtrees. This
-                    was then quite easily ported to unreal, the only parts I had to swap out, were `std::vectors` for
+                    This little experiment was vital for my understanding of the actual applications for quadtrees. This
+                    was then quite easily ported to Unreal, the only parts I had to swap out, were `std::vectors` for
                     Unreal's `TArray` and the debug drawing.
                 </p>
 
@@ -596,7 +599,7 @@ bool Quadtree::Insert(Point& point)
                 <h3 id="observer-quadtree">Subdividing around the observer</h3>
                 <P>
                     At first I wasn't sure how to adapt the quadtree to be able to work with terrain instead of being
-                    capacity-based as shown in the experiment above. After some further researching I came across a
+                    capacity-based as shown in the experiment above. After some further research I came across a
                     fantastic video series by SimonDev "3D world generation", specifically episode 3 "3D World
                     Generation: #3 (Quadtree & LOD)" where he explained how quadtrees can be used for a terrain LOD
                     system (exactly the piece I wasn't sure about).
@@ -605,7 +608,7 @@ bool Quadtree::Insert(Point& point)
 
                 <p>
                     These videos in combination with Filip's paper and the basic quadtree implementation experiment
-                    helped my understand how it all should come together. <br><br>
+                    helped me understand how it all should come together. <br><br>
 
                     A few changes were needed to make it actually
                     work for my application which is terrain rendering. Instead of subdividing the quadtree based on a
@@ -646,8 +649,8 @@ void Quadtree::ReBuild(const FQuadTreeLODConfig& settings, const FVector3f& obse
                 <h2 id="lod">LOD system</h2>
 
                 <p>
-                    The quadtree was now working inside unreal, it only had to be actually implemented into the
-                    planet generation workflow in terms of an Level of Detail (LOD) system. I ended up with the
+                    The quadtree was now working inside Unreal, it only had to be actually implemented into the
+                    planet generation workflow in terms of a Level of Detail (LOD) system. I ended up with the
                     following workflow: <br><br>
 
                     Every planet is a cube sphere: six faces, each with its own quadtree. Every LOD update follows the
@@ -779,7 +782,8 @@ bool Quadtree::ShouldSplit(const FQuadTreeLODConfig& settings, const FVector3f& 
                     World - Alex K.</p>
 
                 <p>
-                    This works fine, but there are a couple problems. The biomes are quite predictible because the same
+                    This works fine, but there are a couple of problems. The biomes are quite predictable because the
+                    same
                     biomes will always generate on certain heights. Also, there is not much room to add different biomes
                     because adding biomes will result in ring shapes because the terrain is derived from the intensity
                     (height) output of the noise, leaving little room.
@@ -798,7 +802,7 @@ bool Quadtree::ShouldSplit(const FQuadTreeLODConfig& settings, const FVector3f& 
 
                 <p>
                     They do have sharp borders, but that can be mitigated by applying some type of smoothing along the
-                    borders. This in combinations with a Perlin temperature and/or humidity noise map, can generate hot,
+                    borders. This in combination with a Perlin temperature and/or humidity noise map, can generate hot,
                     temperate and cold biomes in a somewhat realistic manner.
 
                 </p>
@@ -808,8 +812,8 @@ bool Quadtree::ShouldSplit(const FQuadTreeLODConfig& settings, const FVector3f& 
 
                 <h3 id="biomes-shape-terrain">Biomes shape the terrain</h3>
                 <p>
-                    Another important consideration will be deciding if i want my terrain to shape the biomes or if
-                    the biomes should shape the terrain. When the terrain shapes the biomes, the biomes are more a
+                    Another important consideration will be deciding if I want my terrain to shape the biomes or if
+                    the biomes should shape the terrain. When the terrain shapes the biomes, the biomes are more an
                     afterthought, where terrain is generated first and then the system asks "which biome fits on this
                     terrain?".
                 </p>
@@ -881,7 +885,8 @@ bool Quadtree::ShouldSplit(const FQuadTreeLODConfig& settings, const FVector3f& 
                 </div>
 
                 <p>
-                    For my implementation, I wanted to to try lean more that biomes shape the terrain. I prefer this
+                    For my implementation, I wanted to try to lean more towards biomes shaping the terrain. I prefer
+                    this
                     method more because I didn't want to have a lot of biomes for the planets. I would like to keep it
                     within scope.
 
@@ -893,8 +898,8 @@ bool Quadtree::ShouldSplit(const FQuadTreeLODConfig& settings, const FVector3f& 
 
                 <h3 id="biome-cells">Distributing biome cells</h3>
                 <p>
-                    Since the planets are spherified cubed, the planet has 6 distinctive sides that are planes. I could
-                    project Voronoi/Worley noise to each side. This solves the problem of trying to map one huge
+                    Since the planets are spherified cubes, the planet has 6 distinctive sides that are planes. I could
+                    project Voronoi/Worley noise onto each side. This solves the problem of trying to map one huge
                     noise map to the whole planet.
                 </p>
 
@@ -903,7 +908,7 @@ bool Quadtree::ShouldSplit(const FQuadTreeLODConfig& settings, const FVector3f& 
                     style="max-width: 50%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
 
                 <p>
-                    However, I realized this wasn't really is the best solution because this will cause major artifacts
+                    However, I realized this wasn't really the best solution because this will cause major artifacts
                     on the edge borders. Instead I am planning to sample biome noise based on a Fibonacci sphere since
                     the terrain noise is evaluated separately from the rest of the generation pipeline.
                 </p>
@@ -937,7 +942,7 @@ for (int32 i = 0; i < shapeSettings.biomeCellCount; i++)
                 <p>
                     This technique works really well for distributing points on the surface of a sphere with even
                     distribution. I do this because I am essentially creating my own type of Voronoi noise, Unreal
-                    doesn't have a built-in way to sample Voronoi noise in c++ so what I ended up doing is adding some
+                    doesn't have a built-in way to sample Voronoi noise in C++ so what I ended up doing is adding some
                     random noise to these points and kind of warp them until a Voronoi-type noise is created.
                 </p>
 
@@ -949,7 +954,7 @@ for (int32 i = 0; i < shapeSettings.biomeCellCount; i++)
 
                 <h3 id="biome-weights">Blending biome weights</h3>
                 <p>
-                    Using a data asset, the user can easily maintain and tweak values like the amount of biome cells to
+                    Using a data asset, the user can easily maintain and tweak values like the number of biome cells to
                     generate or the amount of jitter on the distributed points (warp intensity).
 
                     <br><br>When constructing the surface of planets in my main <code>ShapeGenerator.cpp</code>, the
@@ -959,7 +964,7 @@ for (int32 i = 0; i < shapeSettings.biomeCellCount; i++)
                 <pre><code class="language-cpp">
 struct FBiomeWeights
 {
-    float weight[(int32)EBiome::Count] = {0.f, 0.f, 0.f};
+    float w[(int32)EBiome::Count] = {0.f, 0.f, 0.f};
     float Get(EBiome biome) const { return w[(int32)biome]; }
 };
                 </code></pre>
@@ -1012,13 +1017,13 @@ FPlanetSample UShapeGenerator::CalculatePointOnPlanet(FVector3f pointOnSphere)
 </code></pre>
 
                 <p>
-                    <br>I find this very exiting because with all this, the user can tweak the noise values of the
+                    <br>I find this very exciting because with all this, the user can tweak the noise values of the
                     specific biomes and as a result the
                     biomes shape the terrain instead of the terrain being generated first with the biomes being painted
-                    over the terrain as an after thought. Deserts for example can be smooth and hilly while cold biomes
+                    over the terrain as an afterthought. Deserts for example can be smooth and hilly while cold biomes
                     could be sharp and pointy.
 
-                    <br><br>Then when construction the mesh for the terrain, I paint the vertices based on the biome.
+                    <br><br>Then when constructing the mesh for the terrain, I paint the vertices based on the biome.
                 </p>
 
                 <pre><code class="language-cpp">
@@ -1042,7 +1047,7 @@ colors[i] = FLinearColor // Create color buffer using the biomeweights.
 </code></pre>
 
                 <p>
-                    Finally, the mesh gets eather upated or created with the correct vertex color.
+                    Finally, the mesh gets either updated or created with the correct vertex color.
                 </p>
 
                 <pre><code class="language-cpp">
@@ -1067,7 +1072,7 @@ else // If the mesh does not have to be generated from scratch, only update it.
                     style="max-width: 100%; height: auto; display:flex; margin: auto;" loading="lazy" decoding="async">
 
                 <p>
-                    <br>Then I can override the biome colors in the material grahp using this custom shader node. Which
+                    <br>Then I can override the biome colors in the material graph using this custom shader node. Which
                     blends height coloring with my biome override colors.
                 </p>
 
@@ -1090,7 +1095,8 @@ else // If the mesh does not have to be generated from scratch, only update it.
                     To make the planets even more interesting, I added terrain scatter to the generation
                     workflow. The somewhat naive solution would be to just instantiate models over the surface wherever,
                     but this would run veeery slow and consume lots of precious VRAM. Instead of rolling my own
-                    solution, I took a look at Unreal's Procedural Generation Framework (PCG) because terrain scatter is
+                    solution, I took a look at Unreal's Procedural Content Generation Framework (PCG) because terrain
+                    scatter is
                     something that would be perfect for this built-in system.
                 </p>
 
@@ -1111,8 +1117,9 @@ else // If the mesh does not have to be generated from scratch, only update it.
                 </p>
 
                 <p>
-                    After some more digging I found a reddit forum post about this specific topic. A user answered the
-                    question of creating custom PCG nodes in c++ with that the class <code>UPCGSettings</code> can be
+                    After some more digging I found a Reddit forum post about this specific topic. A user answered the
+                    question of creating custom PCG nodes in C++ by saying that the class <code>UPCGSettings</code> can
+                    be
                     inherited from.
 
                 </p>
@@ -1213,7 +1220,7 @@ for (int32 i = 0; i < numPoints; ++i)
 
                 <p>
                     <br>This results in the spawned actors correctly spawning on the surface no matter how many or how
-                    intense the noise layer are:
+                    intense the noise layers are:
                 </p>
 
                 <video src="../media/planet/planet_pcg_test.mp4" controls loop preload="metadata" playsinline
@@ -1260,8 +1267,8 @@ void APlanet::RegeneratePCG()
 
                 <h3 id="pcg-biomes">Biome-dependent scatter</h3>
                 <p>
-                    Now that I could spawn these a huge number of terrain props on the planet, the next step was to add
-                    the ability to make the spawning of these pieces biome depended. The planets can currently have
+                    Now that I could spawn a huge number of terrain props on the planet, the next step was to add
+                    the ability to make the spawning of these pieces biome dependent. The planets can currently have
                     Cold, Hot and Temperate biomes.
 
                     <br><br>I ended up using <code>PCG Attribute Sets</code> for this.
@@ -1334,7 +1341,7 @@ biomeAttribute->SetValue(point.MetadataEntry, mainBiome); // Store main biome en
                 <p>
                     What started as a simple sphere turned into a tool that can generate and render planets at
                     real-life scales inside Unreal 5. There is still plenty I would like to improve, like smoothing out
-                    the seams along the cube face edges, adding support for custom biomes and a more general features
+                    the seams along the cube face edges, adding support for custom biomes and more general features
                     like an atmosphere shader or even a little solar system generator. Even so, I am really happy with
                     how far the project came. It taught me a lot about real-time procedural generation, new data
                     structures and algorithms like quadtrees and LOD systems, fractal noise and working inside Unreal's
